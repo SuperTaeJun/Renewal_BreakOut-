@@ -28,7 +28,10 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UCharacterMovementComponent> Movement;
 
-	//TObjectPtr<class AWeaponBase>EquipWeapon;
+	TObjectPtr<class AWeaponBase>CurEquipWeapon;
+
+
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	float Speed;

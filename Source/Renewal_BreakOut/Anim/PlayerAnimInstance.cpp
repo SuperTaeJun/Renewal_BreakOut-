@@ -5,6 +5,8 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Character/CharacterBase.h"
+#include "Character/PlayerCombatComp.h"
+#include "Weapon/WeaponBase.h"
 void UPlayerAnimInstance::NativeInitializeAnimation()
 {
 	BaseCharacter = Cast<ACharacterBase>(GetOwningActor());
@@ -26,7 +28,7 @@ void UPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		bIsFalling = Movement->IsFalling();
 		bIsAccelerating = BaseCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f ? true : false;
 		TurningType = BaseCharacter->GetTurningType();
-		//EquipWeapon = BaseCharacter->GetWeapon();
+		CurEquipWeapon = BaseCharacter->GetCombatComp()->GetCurWeapon();
 
 		//Yaw오프셋 값
 		FRotator AimRotation = BaseCharacter->GetBaseAimRotation();
@@ -47,21 +49,21 @@ void UPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		AO_Pitch = BaseCharacter->GetAO_Pitch();
 
 
-		//if (EquipWeapon)
-		//{
-		//	LeftHandTransform = EquipWeapon->GetWeaponMesh()->GetSocketTransform(FName("LeftHandSocket"), ERelativeTransformSpace::RTS_World);
-		//	FVector OutPosition;
-		//	FRotator OutRotation;
-		//	BaseCharacter->GetMesh()->TransformToBoneSpace(FName("Bip001-R-Hand"), LeftHandTransform.GetLocation(), FRotator::ZeroRotator, OutPosition, OutRotation);
-		//	LeftHandTransform.SetLocation(OutPosition);
-		//	LeftHandTransform.SetRotation(FQuat(OutRotation));
+		if (CurEquipWeapon)
+		{
+			LeftHandTransform = CurEquipWeapon->GetWeaponMesh()->GetSocketTransform(FName("LeftHandSocket"), ERelativeTransformSpace::RTS_World);
+			FVector OutPosition;
+			FRotator OutRotation;
+			BaseCharacter->GetMesh()->TransformToBoneSpace(FName("Bip001-R-Hand"), LeftHandTransform.GetLocation(), FRotator::ZeroRotator, OutPosition, OutRotation);
+			LeftHandTransform.SetLocation(OutPosition);
+			LeftHandTransform.SetRotation(FQuat(OutRotation));
 
-		//	FTransform RightHandTransform = EquipWeapon->GetWeaponMesh()->GetSocketTransform(FName("Bip001-R-Hand"), ERelativeTransformSpace::RTS_World);
-		//	RightHandRotation = UKismetMathLibrary::FindLookAtRotation(RightHandTransform.GetLocation(), BaseCharacter->GetHitTarget());
+			FTransform RightHandTransform = CurEquipWeapon->GetWeaponMesh()->GetSocketTransform(FName("Bip001-R-Hand"), ERelativeTransformSpace::RTS_World);
+			RightHandRotation = UKismetMathLibrary::FindLookAtRotation(RightHandTransform.GetLocation(), BaseCharacter->GetCombatComp()->GetHitTarget());
 
-		//	FTransform MuzzleTransform = EquipWeapon->GetWeaponMesh()->GetSocketTransform(FName("MuzzleFlash"), ERelativeTransformSpace::RTS_World);
-		//	FVector MuzzleX(FRotationMatrix(MuzzleTransform.GetRotation().Rotator()).GetUnitAxis(EAxis::X));
+			FTransform MuzzleTransform = CurEquipWeapon->GetWeaponMesh()->GetSocketTransform(FName("MuzzleFlash"), ERelativeTransformSpace::RTS_World);
+			FVector MuzzleX(FRotationMatrix(MuzzleTransform.GetRotation().Rotator()).GetUnitAxis(EAxis::X));
 
-		//}
+		}
 	}
 }

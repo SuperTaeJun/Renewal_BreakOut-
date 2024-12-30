@@ -8,15 +8,14 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Character/PlayerCombatComp.h"
+#include "Weapon/WeaponBase.h"
 
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 
 #define DEFAULTCAMERALENGTH 200
 #define SPRINTCAMERALENGTH 100
-
-
-
 
 ACharacterBase::ACharacterBase()
 {
@@ -31,7 +30,8 @@ void ACharacterBase::BeginPlay()
 	Super::BeginPlay();
 	
 	InputMpaaing();
-
+	FName RifleSocketName = FName("RifleSocket");
+	CombatComp->SetWeapon(AWeaponBase::StaticClass(), RifleSocketName);
 }
 
 void ACharacterBase::Tick(float DeltaTime)
@@ -70,6 +70,8 @@ void ACharacterBase::SetupCharacter()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom);
 	FollowCamera->bUsePawnControlRotation = false;
+
+	CombatComp = CreateDefaultSubobject<UPlayerCombatComp>(TEXT("CombatComp"));
 }
 
 void ACharacterBase::TurnInPlace(float DeltaTime)
@@ -157,6 +159,8 @@ void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		//EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacterBase::StopJump);
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this, &ACharacterBase::Sprint_S);
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &ACharacterBase::Sprint_E);
+		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &ACharacterBase::Fire_S);
+		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &ACharacterBase::Fire_E);
 	}
 }
 void ACharacterBase::Move(const FInputActionValue& Value)
@@ -190,6 +194,7 @@ void ACharacterBase::Sprint_E(const FInputActionValue& Value)
 }
 void ACharacterBase::Fire_S(const FInputActionValue& Value)
 {
+	CombatComp->Fire();
 }
 void ACharacterBase::Fire_E(const FInputActionValue& Value)
 {

@@ -32,7 +32,8 @@ private:
 	TObjectPtr<class UCameraComponent> FollowCamera;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UCharacterMovementComponent> Movement;
-
+	UPROPERTY(VisibleAnywhere, Category = Character)
+	TObjectPtr<class UPlayerCombatComp> CombatComp;
 #pragma endregion
 
 public:
@@ -43,6 +44,7 @@ public:
 #pragma endregion
 
 #pragma region GetFunction
+	FORCEINLINE class UPlayerCombatComp* GetCombatComp() { return CombatComp; }
 	FORCEINLINE ETurningInPlace GetTurningType() { return TurningType; }
 
 	FORCEINLINE float GetAO_Yaw() const { return AO_Yaw; }
