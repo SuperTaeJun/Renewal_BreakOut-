@@ -1,0 +1,115 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="OVERLAP">
+      <UniqueIdentifier>{9604e173-5b95-4ca1-9762-a345bc1006f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CLIENT">
+      <UniqueIdentifier>{98f14a0c-c229-4a19-b9bc-2d99c03284bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DB">
+      <UniqueIdentifier>{6873e93a-571c-49bf-9779-1225cc86f424}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PacketHandler">
+      <UniqueIdentifier>{bc7be2fd-3b04-4cfe-be2d-7d482b294137}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="IOCP">
+      <UniqueIdentifier>{b1d500b3-0ded-431e-b37b-8685fb08f840}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Timer">
+      <UniqueIdentifier>{ae6caddd-be46-4db6-a18d-12081ea7eb47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="LockQueue">
+      <UniqueIdentifier>{ec489a8e-ad7b-4b15-ba48-468923b1f011}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Room">
+      <UniqueIdentifier>{f0bd6d9e-cb3b-4568-ad6d-33b701e620bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Objects">
+      <UniqueIdentifier>{6f607afb-64e4-47e5-8cd1-bede36316f93}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Overlap.cpp">
+      <Filter>OVERLAP</Filter>
+    </ClCompile>
+    <ClCompile Include="CLIENT.cpp">
+      <Filter>CLIENT</Filter>
+    </ClCompile>
+    <ClCompile Include="DB.cpp">
+      <Filter>DB</Filter>
+    </ClCompile>
+    <ClCompile Include="server.cpp">
+      <Filter>IOCP</Filter>
+    </ClCompile>
+    <ClCompile Include="LockQueue.cpp">
+      <Filter>LockQueue</Filter>
+    </ClCompile>
+    <ClCompile Include="Room.cpp">
+      <Filter>Room</Filter>
+    </ClCompile>
+    <ClCompile Include="RoomManager.cpp">
+      <Filter>Room</Filter>
+    </ClCompile>
+    <ClCompile Include="PacketManager.cpp">
+      <Filter>PacketHandler</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="IOCPServer.cpp">
+      <Filter>IOCP</Filter>
+    </ClCompile>
+    <ClCompile Include="BulletWall.cpp">
+      <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="EscapeObject.cpp">
+      <Filter>Objects</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="protocol.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Enum.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Overlap.h">
+      <Filter>OVERLAP</Filter>
+    </ClInclude>
+    <ClInclude Include="CLIENT.h">
+      <Filter>CLIENT</Filter>
+    </ClInclude>
+    <ClInclude Include="DB.h">
+      <Filter>DB</Filter>
+    </ClInclude>
+    <ClInclude Include="LockQueue.h">
+      <Filter>LockQueue</Filter>
+    </ClInclude>
+    <ClInclude Include="IOCPServer.h">
+      <Filter>IOCP</Filter>
+    </ClInclude>
+    <ClInclude Include="Room.h">
+      <Filter>Room</Filter>
+    </ClInclude>
+    <ClInclude Include="RoomManager.h">
+      <Filter>Room</Filter>
+    </ClInclude>
+    <ClInclude Include="PacketManager.h">
+      <Filter>PacketHandler</Filter>
+    </ClInclude>
+    <ClInclude Include="BulletWall.h">
+      <Filter>Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="EscapeObject.h">
+      <Filter>Objects</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
