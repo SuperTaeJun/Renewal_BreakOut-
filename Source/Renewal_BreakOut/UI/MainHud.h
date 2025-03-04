@@ -15,6 +15,8 @@ class RENEWAL_BREAKOUT_API AMainHud : public AHUD
 	GENERATED_BODY()
 
 public:
+	AMainHud();
+
 	UPROPERTY(EditAnywhere, Category = Crosshair)
 	UTexture2D* CrosshairCenter;
 	UPROPERTY(EditAnywhere, Category = Crosshair)
@@ -26,4 +28,13 @@ public:
 private:
 	virtual void DrawHUD() override;
 	void DrawCrosshair(UTexture2D* Texture, FVector2D ViewportCenter);
+
+	UPROPERTY()
+	class UUIManagerComponent* UIManager;
+
+public:
+	UPROPERTY(EditAnywhere, Category = "WidgetClass")
+	TSubclassOf<class UUserWidget>SelectWeaponClass;
+
+
 };

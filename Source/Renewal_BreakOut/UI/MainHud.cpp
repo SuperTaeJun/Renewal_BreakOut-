@@ -2,6 +2,13 @@
 
 
 #include "UI/MainHud.h"
+#include "UIManagerComponent.h"
+
+AMainHud::AMainHud()
+{
+	// UI 매니저 생성
+	UIManager = CreateDefaultSubobject<UUIManagerComponent>(TEXT("UIManager"));
+}
 
 void AMainHud::DrawHUD()
 {

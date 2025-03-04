@@ -143,7 +143,7 @@ void ACharacterBase::InputMpaaing()
 		//입력시스템 매핑
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
-			Subsystem->AddMappingContext(DefalutMappingContext, 0);
+			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
 }
@@ -157,10 +157,10 @@ void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ACharacterBase::Look);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
-		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this, &ACharacterBase::Sprint_S);
-		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &ACharacterBase::Sprint_E);
-		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &ACharacterBase::Fire_S);
-		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &ACharacterBase::Fire_E);
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this, &ACharacterBase::SprintStart);
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &ACharacterBase::SprintEnd);
+		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &ACharacterBase::FireStart);
+		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &ACharacterBase::FireEnd);
 	}
 }
 void ACharacterBase::Move(const FInputActionValue& Value)
@@ -185,7 +185,7 @@ void ACharacterBase::Look(const FInputActionValue& Value)
 		AddControllerPitchInput(LookAxis.Y);
 	}
 }
-void ACharacterBase::Sprint_S(const FInputActionValue& Value)
+void ACharacterBase::SprintStart(const FInputActionValue& Value)
 {
 	Movement->MaxWalkSpeed = SprintSpeed;
 
@@ -193,18 +193,18 @@ void ACharacterBase::Sprint_S(const FInputActionValue& Value)
 	bUseControllerRotationYaw = false;
 
 }
-void ACharacterBase::Sprint_E(const FInputActionValue& Value)
+void ACharacterBase::SprintEnd(const FInputActionValue& Value)
 {
 	Movement->MaxWalkSpeed = JogSpeed;
 
 	Movement->bOrientRotationToMovement = false;
 	bUseControllerRotationYaw = true;
 }
-void ACharacterBase::Fire_S(const FInputActionValue& Value)
+void ACharacterBase::FireStart(const FInputActionValue& Value)
 {
 	CombatComp->Fire();
 }
-void ACharacterBase::Fire_E(const FInputActionValue& Value)
+void ACharacterBase::FireEnd(const FInputActionValue& Value)
 {
 }
 #pragma endregion
