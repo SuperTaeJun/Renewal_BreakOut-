@@ -1,14 +1,9 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameMode.h"
 #include "BOGameMode.generated.h"
 
-/**
- *
- */
 UCLASS()
 class BREAKOUT_API ABOGameMode : public AGameMode
 {
@@ -17,6 +12,7 @@ class BREAKOUT_API ABOGameMode : public AGameMode
 public:
 	ABOGameMode();
 	virtual void BeginPlay() override;
+	void StartCineWithBindingFinishFunc();
 	virtual void Tick(float DeltaTime) override;
 
 	float StartTime = 10.f;
@@ -37,6 +33,7 @@ public:
 	TSubclassOf<class ACharacterBase>Character4;
 
 	FTimerHandle StartTimeHandle;
+	UFUNCTION()
 	void StartGame();
 	bool bStarted;
 	class UBOGameInstance* inst;
@@ -48,4 +45,9 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<class USoundCue> BackGroundSound;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<class ULevelSequence> EndGameCine;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<class ULevelSequence> StartGameCine;
 };

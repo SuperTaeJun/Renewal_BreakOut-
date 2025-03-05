@@ -4,15 +4,15 @@
 #include "Game/BOGameMode.h"
 #include "Character/CharacterBase.h"
 #include "Game/BOGameInstance.h"
-#include "Character/CharacterBase.h"
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/CharacterController.h"
-#include "Kismet/GameplayStatics.h"
 #include "ClientSocket.h"
 #include "GameProp/EscapeTool.h"
 #include "TimerManager.h"
-#include "Player/CharacterController.h"
+#include "LevelSequence.h"
+#include "LevelSequencePlayer.h"
+
 
 ABOGameMode::ABOGameMode()
 {
@@ -34,57 +34,44 @@ void ABOGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	inst = Cast<UBOGameInstance>(GetGameInstance());
-	////DisableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-	////GetWorldTimerManager().SetTimer(StartTimeHandle, this, &ABOGameMode::StartGame, 5.f);
-	//TArray<AActor*> Actors;
-	//UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEscapeTool::StaticClass(), Actors);
-	//for (int i = 0; i < Actors.Num(); i++)
-	//{
-	//	if (Cast<AEscapeTool>(Actors[i]) && inst)
-	//	{
-	//		//int objid = Cast<AEscapeTool>(Actors[i])->ItemID;
-	//		//inst->m_Socket->Send_item_info_packet(objid);
 
-	//		EscapeTools.Add(Cast<AEscapeTool>(Actors[i]));
-	//	
-	//	}
-	//}
+	StartCineWithBindingFinishFunc();
+
+}
+
+void ABOGameMode::StartCineWithBindingFinishFunc()
+{
+	if (/*Cast<UBOGameInstance>(GetWorld()->GetGameInstance())->m_Socket->bAllReady == true &&*/ !bStarted)
+	{
+
+		Cast<UBOGameInstance>(GetWorld()->GetGameInstance())->m_Socket->bAllReady = false;
+		bStarted = true;
+		DisableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+		FMovieSceneSequencePlaybackSettings PlaybackSettings;
+		PlaybackSettings.bHideHud = true;
+		PlaybackSettings.bHidePlayer = true;
+		PlaybackSettings.bDisableMovementInput = true;
+		PlaybackSettings.bDisableLookAtInput = true;
+		ALevelSequenceActor* SequenceActor;
+		ULevelSequencePlayer* LevelSequencePlayer = ULevelSequencePlayer::CreateLevelSequencePlayer(
+			GetWorld(),
+			StartGameCine,
+			PlaybackSettings,
+			SequenceActor
+		);
+
+		if (LevelSequencePlayer)
+		{
+			LevelSequencePlayer->Play();
+			LevelSequencePlayer->OnFinished.AddDynamic(this, &ABOGameMode::StartGame);
+		}
+	}
 }
 
 void ABOGameMode::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	//bool bAllConnect = false;
-	//if (inst->m_Socket->bAllReady==true && !bStarted)
-	//{
-	//	UE_LOG(LogTemp, Warning, TEXT("ballready!!!!!!!!!!!!!!!!!"));
-	//	DisableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-	//	GetWorldTimerManager().SetTimer(StartTimeHandle, this, &ABOGameMode::StartGame, 5.f);
-	//if (inst->m_Socket->ItemQueue.size())
-	//{
-	//	FVector itemLoc;
-	//	itemLoc.X = inst->m_Socket->ItemQueue.front()->X;
-	//	itemLoc.Y = inst->m_Socket->ItemQueue.front()->Y;
-	//	itemLoc.Z = inst->m_Socket->ItemQueue.front()->Z;
 
-	//	EscapeTools[inst->m_Socket->ItemQueue.front()->Id]->ItemID = inst->m_Socket->ItemQueue.front()->Id;
-	//	EscapeTools[inst->m_Socket->ItemQueue.front()->Id]->SetActorLocation(itemLoc);
-	//	inst->m_Socket->ItemQueue.front() = nullptr;
-	//	inst->m_Socket->ItemQueue.pop();
-	//}
-	//}
-	//if (inst->m_Socket->ItemQueue.size())
-	//{
-	//	FVector itemLoc;
-	//	itemLoc.X = inst->m_Socket->ItemQueue.front()->X;
-	//	itemLoc.Y = inst->m_Socket->ItemQueue.front()->Y;
-	//	itemLoc.Z = inst->m_Socket->ItemQueue.front()->Z;
-
-	//	EscapeTools[inst->m_Socket->ItemQueue.front()->Id]->ItemID = inst->m_Socket->ItemQueue.front()->Id;
-	//	EscapeTools[inst->m_Socket->ItemQueue.front()->Id]->SetActorLocation(itemLoc);
-	//	inst->m_Socket->ItemQueue.front() = nullptr;
-	//	inst->m_Socket->ItemQueue.pop();
-	//}
 }
 
 
@@ -97,19 +84,6 @@ void ABOGameMode::SetDamageInsigator(ACharacterBase* DamageInsigatorCh)
 void ABOGameMode::Respawn(ACharacter* RespawnedCh, AController* RespawnedController, FName TagName)
 {
 	ACharacterBase* MyCharacter = Cast<ACharacterBase>(RespawnedCh);
-	//if (DamageInsigator)
-	//{
-	//	if (MyCharacter->GetEscapeToolNum() >= 10)
-	//	{
-	//		DamageInsigator->SetEscapeToolNum(DamageInsigator->GetEscapeToolNum() + 3);
-	//		MyCharacter->SetEscapeToolNum(MyCharacter->GetEscapeToolNum() - 3);
-	//	}
-	//	else if(MyCharacter->GetEscapeToolNum()>0)
-	//	{
-	//		DamageInsigator->SetEscapeToolNum(DamageInsigator->GetEscapeToolNum() + 1);
-	//		MyCharacter->SetEscapeToolNum(MyCharacter->GetEscapeToolNum() - 1);
-	//	}
-	//}
 
 	if (MyCharacter && RespawnedController)
 	{
@@ -129,8 +103,7 @@ void ABOGameMode::Respawn(ACharacter* RespawnedCh, AController* RespawnedControl
 		Cast<ACharacterController>(RespawnedController)->OnPossess(MyCharacter);
 		//RestartPlayerAtPlayerStart(RespawnedController, PlayerStarts);
 	}
-	//if (inst)
-	//	inst->m_Socket->Send_Dissolve_packet(inst->GetPlayerID(), 1);
+
 }
 
 UClass* ABOGameMode::GetDefaultPawnClassForController_Implementation(AController* InController)
@@ -159,8 +132,6 @@ UClass* ABOGameMode::GetDefaultPawnClassForController_Implementation(AController
 
 AActor* ABOGameMode::ChoosePlayerStart_Implementation(AController* Player)
 {
-	//Super::ChoosePlayerStart(Player);
-
 	AActor* PlayerStarts1 = FindPlayerStart(Player, FString(TEXT("PlayerStart1")));
 	AActor* PlayerStarts2 = FindPlayerStart(Player, FString(TEXT("PlayerStart2")));
 	AActor* PlayerStarts3 = FindPlayerStart(Player, FString(TEXT("PlayerStart3")));
@@ -183,13 +154,25 @@ AActor* ABOGameMode::ChoosePlayerStart_Implementation(AController* Player)
 		if (PlayerStarts1) return PlayerStarts1;
 		break;
 	}
+
 	return 	Super::ChoosePlayerStart(Player);
 }
 
 void ABOGameMode::StartGame()
 {
+	ACharacterBase* Character = nullptr;
+	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+	if (PlayerController)
+	{
+		Character = Cast<ACharacterBase>(PlayerController->GetPawn());
 
-	EnableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-	bStarted = true;
-	inst->m_Socket->bAllReady = false;
+		if (Character)
+		{
+			Character->StartGame();
+		}
+	}
+
+	//EnableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	//bStarted = true;
+	//inst->m_Socket->bAllReady = false;
 }

@@ -33,7 +33,7 @@
 #include "Components/SpotLightComponent.h"
 #include "LevelSequence.h"
 #include "LevelSequencePlayer.h"
-#include "Weapon/WeaponBase.h"
+
 
 ACharacterBase::ACharacterBase()
 {
@@ -1080,34 +1080,6 @@ void ACharacterBase::Tick(float DeltaTime)
 				GetMesh()->SetMaterial(0, MDynamicDissolveInst);
 				MDynamicDissolveInst->SetScalarParameterValue(FName("Dissolve"), DissolvePercent);
 			}
-		}
-	}
-
-
-
-	if (Cast<UBOGameInstance>(GetWorld()->GetGameInstance())->m_Socket->bAllReady == true && !bStarted)
-	{
-
-		Cast<UBOGameInstance>(GetWorld()->GetGameInstance())->m_Socket->bAllReady = false;
-		bStarted = true;
-		DisableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-		FMovieSceneSequencePlaybackSettings PlaybackSettings;
-		PlaybackSettings.bHideHud = true;
-		PlaybackSettings.bHidePlayer = true;
-		PlaybackSettings.bDisableMovementInput = true;
-		PlaybackSettings.bDisableLookAtInput = true;
-		ALevelSequenceActor* SequenceActor;
-		ULevelSequencePlayer* LevelSequencePlayer = ULevelSequencePlayer::CreateLevelSequencePlayer(
-			GetWorld(),
-			StartGameCine,
-			PlaybackSettings,
-			SequenceActor
-		);
-
-		if (LevelSequencePlayer)
-		{
-			LevelSequencePlayer->Play();
-			LevelSequencePlayer->OnFinished.AddDynamic(this, &ACharacterBase::StartGame);
 		}
 	}
 
