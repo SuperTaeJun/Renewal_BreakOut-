@@ -14,7 +14,6 @@ void AHealthItem::BeginPlay()
 
 void AHealthItem::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	UE_LOG(LogTemp, Warning, TEXT(" OVERLAP"));
 	ACharacterBase* OverlapCh = Cast<ACharacterBase>(OtherActor);
 
 	if (OverlapCh)

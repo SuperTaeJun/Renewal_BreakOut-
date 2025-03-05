@@ -19,9 +19,6 @@ class BREAKOUT_API ACharacterBase : public ACharacter
 public:
 	ACharacterBase();
 
-	virtual void Tick(float DeltaTime) override;
-
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	FORCEINLINE ETurningInPlace GetTurningType() { return TurningType; }
 
@@ -31,13 +28,13 @@ public:
 	void SetAO_PITCH(float Servao_pitch) { AO_Pitch = Servao_pitch; }
 	class AWeaponBase* GetCurWeapon() const { return CurWeapon; }
 	void UpdateObtainedEscapeTool();
-	/*float GetAO_Yaw();
-	float GetAO_Pitch();*/
 	int		_SessionId;
 
-	EWeaponType CurWeaponType;
 protected:
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	EWeaponType CurWeaponType;
 
 	void UpdateCameraBoom(float DeltaTime);
 	void UpdateStamina(float DeltaTime);
@@ -74,48 +71,50 @@ protected:
 	TObjectPtr<class ULevelSequence> EndGameCine;
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<class ULevelSequence> StartGameCine;
+
+	TObjectPtr<class AEscapeTool> OverlappingEscapeTool;
+
 public:
 	void UpdateHpHUD();
 	void UpdateStaminaHUD();
 
 	void SetResetState();
-
-	void SetWeaponType(EWeaponType Type) {CurWeaponType = Type;}
-
-	UAnimMontage* GetDeadMontage() { return DeadMontage; }
+	void SetWeaponType(EWeaponType Type) { CurWeaponType = Type; }
 	void SetbCanEscape(bool _bCanEscape) { bCanEscape = _bCanEscape; }
-	int32 GetEscapeToolNum(){ return ObtainedEscapeToolNum; }
 	void SetEscapeToolNum(int32 Num) { ObtainedEscapeToolNum = Num; }
 	void SetWeapon(TSubclassOf<class AWeaponBase> Weapon, FName SocketName);
 	void SetWeaponUi();
 	void SetRespawnUi();
 	void SetbInRespon(bool _bInRespon) { bInRespon = _bInRespon; }
-	bool GetbInRespon() { return bInRespon; }
-	void SetbShowSelect(bool _bShowSelect) {bShowSelectUi = _bShowSelect;}
+	void SetbShowSelect(bool _bShowSelect) { bShowSelectUi = _bShowSelect; }
 	void SetbCanObtainEscapeTool(bool _bCanObtain);
 	void SetbDissolve(bool Dissolve) { bDissolve = Dissolve; }
 	void SetDissolvePersent(float Dissolve) { DissolvePercent = Dissolve; }
-	float GetDissolvePersent() {return DissolvePercent; }
+	void SetHealth(float DamagedHp) { Health = DamagedHp; }
+	void SetMaxHealth(float MaxHp) { MaxHealth = MaxHp; }
+	void SetOverlappingEscapeTool(class AEscapeTool* _OverlappingEscapeTool) { OverlappingEscapeTool = _OverlappingEscapeTool; }
+
+
+	class AEscapeTool* GetOverlappingEscapeTool() { return OverlappingEscapeTool; }
+	bool GetbInRespon() { return bInRespon; }
+	float GetDissolvePersent() { return DissolvePercent; }
+	UAnimMontage* GetDeadMontage() { return DeadMontage; }
+	int32 GetEscapeToolNum() { return ObtainedEscapeToolNum; }
 	class UMaterialInstanceDynamic* GetDynamicMaterial() { return MDynamicDissolveInst; }
 	class AWeaponBase* GetWeapon() { return CurWeapon; }
 	class ACharacterController* GetMainController() { return MainController; }
-
 	class ULevelSequence* GetEndGameCine() { return EndGameCine; }
-
-	FORCEINLINE void SetHealth(float DamagedHp) { Health = DamagedHp; }
-	FORCEINLINE void SetMaxHealth(float MaxHp) { MaxHealth = MaxHp; }
-	FORCEINLINE float GetHealth() const { return Health; }
-	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
-	FORCEINLINE bool GetbFfirePressed() const { return bFirePressed; }
-	FORCEINLINE float MaxGetHealth() const { return MaxHealth; }
-	FORCEINLINE float GetStamina() const { return Stamina; }
-	FORCEINLINE float MaxGetStamina() const { return MaxStamina; }
-	void PlayFireActionMontage();
+	float GetHealth() const { return Health; }
+	float GetMaxHealth() const { return MaxHealth; }
+	float GetStamina() const { return Stamina; }
+	float GetMaxStamina() const { return MaxStamina; }
+	bool GetbFfirePressed() const { return bFirePressed; }
 	FVector GetHitTarget() { return HitTarget; }
+
+
+
 	UFUNCTION()
 	void ReciveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController, AActor* DamageCauser);
-
-	TObjectPtr<class AEscapeTool> OverlappingEscapeTool;
 
 	void GrandeThrow();
 	void GrandeAim();
@@ -133,7 +132,6 @@ public:
 
 	void Dead();
 	FTimerHandle DeadTimer;
-	//int p_id; // player own id
 	TObjectPtr<class AWeaponBase> CurWeapon;
 
 	bool bAlive = true;
@@ -211,7 +209,8 @@ protected:
 	void Fire();
 	void FirePressd(bool _Pressd);
 	void TraceUnderCrossHiar(FHitResult& TraceHitResult);
-	
+	void PlayFireActionMontage();
+
 	bool bInRespon;
 	bool bShowSelectUi;
 	bool bCanObtainEscapeTool;
@@ -236,7 +235,7 @@ protected:
 
 	//ÀÔ·Â°ª
 protected:
-	bool CanJump=true;
+	bool CanJump = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	TObjectPtr<class UInputMappingContext> DefalutMappingContext;

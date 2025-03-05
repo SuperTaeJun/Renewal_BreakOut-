@@ -221,7 +221,7 @@ void AEscapeTool::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AAct
 		OverlapedCharacter = Cast<ACharacterBase>(OtherActor);
 		if (OverlapedCharacter)
 		{
-			OverlapedCharacter->OverlappingEscapeTool = this;
+			OverlapedCharacter->SetOverlappingEscapeTool(this);
 		}
 		if (bDetected)
 		{
@@ -239,7 +239,7 @@ void AEscapeTool::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, A
 	{
 		PercentBar->SetVisibility(false);
 		characterbase->SetbCanObtainEscapeTool(false);
-		characterbase->OverlappingEscapeTool = nullptr;
+		characterbase->SetOverlappingEscapeTool(nullptr);
 		bOverlap = 2;
 		if (inst && characterbase->GetMainController())
 			inst->m_Socket->Send_Mopp_Sync_packet(ItemID, 2, inst->GetPlayerID());

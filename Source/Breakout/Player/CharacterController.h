@@ -31,18 +31,6 @@ struct RotAndLoc
 		Rot = B;
 	}
 };
-struct FTreeNode
-{
-	TMap<FString, RotAndLoc> Transform;
-	TArray<FTreeNode> Children;
-
-	FTreeNode() {}
-
-	FTreeNode(TMap<FString, RotAndLoc> InTransform)
-	{
-		Transform = InTransform;
-	}
-};
 
 
 UCLASS()
@@ -198,9 +186,6 @@ public:
 	void InitPlayer();
 	//Tick함수
 	virtual void Tick(float DeltaTime);
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	//void RecvNewPlayer(int sessionID, float x, float y, float z);
-	//void SendPlayerPos(int id);
 
 	// 스폰시킬 다른 캐릭터
 	UPROPERTY(EditAnywhere, Category = "Spawning")

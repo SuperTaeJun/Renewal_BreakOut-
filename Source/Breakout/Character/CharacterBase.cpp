@@ -15,7 +15,6 @@
 #include "Weapon/WeaponBase.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "HUD/MainHUD.h"
-#include "Player/CharacterController.h"
 #include "GameFramework/PlayerController.h"
 #include "Game/BOGameInstance.h"
 #include "ClientSocket.h"
@@ -34,6 +33,8 @@
 #include "Components/SpotLightComponent.h"
 #include "LevelSequence.h"
 #include "LevelSequencePlayer.h"
+#include "Weapon/WeaponBase.h"
+
 ACharacterBase::ACharacterBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -44,7 +45,6 @@ ACharacterBase::ACharacterBase()
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0.f, 0.f, -90.f), FRotator(0.f, -90.f, 0.f));
-
 	GetMesh()->GetAnimInstance();
 
 	Movement = GetCharacterMovement();
@@ -112,23 +112,8 @@ void ACharacterBase::BeginPlay()
 			Subsystem->AddMappingContext(DefalutMappingContext, 0);
 		}
 	}
-	//MainHUD = MainHUD == nullptr ? Cast<AMainHUD>(MainController->GetHUD()) : MainHUD;
+
 	MainController = MainController == nullptr ? Cast<ACharacterController>(Controller) : MainController;
-	//if (MainController)
-	//{
-	//	EnableInput(MainController);
-	//	FInputModeGameOnly GameInput;
-	//	MainController->bShowMouseCursor = false;
-	//	MainController->SetInputMode(GameInput);
-	//	MainController->ShowMatchingUi();
-	//	MainController->SetHUDMatchingUi();
-	//}
-	////무기선택 ui생성
-	//MainController = MainController == nullptr ? Cast<ACharacterController>(Controller) : MainController;
-	//if (MainController)
-	//{
-	//	SetWeaponUi();
-	//}
 
 	BojoMugiType = EBojoMugiType::ECS_DEFAULT;
 
@@ -402,8 +387,8 @@ void ACharacterBase::SpawnGrenade()
 
 void ACharacterBase::ReloadForMontage()
 {
-	CurWeapon->CurAmmo = CurWeapon->MaxAmmo;
-	MainController->SetHUDAmmo(CurWeapon->CurAmmo);
+	CurWeapon->SetCurAmmo(CurWeapon->GetMaxAmmo());
+	MainController->SetHUDAmmo(CurWeapon->GetCurAmmo());
 	bCanFire = true;
 }
 
@@ -480,7 +465,7 @@ void ACharacterBase::ReciveDamage(AActor* DamagedActor, float Damage, const UDam
 			UpdateObtainedEscapeTool();
 		}
 		if (CurWeapon)
-			CurWeapon->CurAmmo = 0;
+			CurWeapon->SetCurAmmo(0);
 
 		if (bAlive && MainController)
 		{
@@ -583,7 +568,7 @@ void ACharacterBase::FireTimerFinished()
 
 void ACharacterBase::Fire()
 {
-	if (CurWeapon->CurAmmo <= 0)
+	if (CurWeapon->GetCurAmmo() <= 0)
 		bCanFire = false;
 
 	if (bCanFire == true)
@@ -605,8 +590,8 @@ void ACharacterBase::Fire()
 		else
 			AddControllerPitchInput(-6.f);
 
-		CurWeapon->CurAmmo -= 1;
-		MainController->SetHUDAmmo(CurWeapon->CurAmmo);
+		CurWeapon->SetCurAmmo(CurWeapon->GetCurAmmo() - 1);
+		MainController->SetHUDAmmo(CurWeapon->GetCurAmmo());
 
 		StartFireTimer();
 	}
@@ -737,11 +722,11 @@ void ACharacterBase::Fire_S(const FInputActionValue& Value)
 	if (CurWeapon)
 	{
 		//CurWeapon->SetActorHiddenInGame(false);
-		if (CurWeapon->CurAmmo <= 0)
+		if (CurWeapon->GetCurAmmo() <= 0)
 		{
 			bFirePressed = false;
 		}
-		else if (CurWeapon->CurAmmo >= 1)
+		else if (CurWeapon->GetCurAmmo() >= 1)
 		{
 			bFirePressed = true;
 		}
@@ -1102,10 +1087,9 @@ void ACharacterBase::Tick(float DeltaTime)
 
 	if (Cast<UBOGameInstance>(GetWorld()->GetGameInstance())->m_Socket->bAllReady == true && !bStarted)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("StartGame"));
+
 		Cast<UBOGameInstance>(GetWorld()->GetGameInstance())->m_Socket->bAllReady = false;
 		bStarted = true;
-		//MainController->MainHUD->RemoveMatchingUi();
 		DisableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 		FMovieSceneSequencePlaybackSettings PlaybackSettings;
 		PlaybackSettings.bHideHud = true;
@@ -1129,27 +1113,6 @@ void ACharacterBase::Tick(float DeltaTime)
 
 	if (MainController)
 		MainController->SeverHpSync(bAlive, Health, inst->GetPlayerID());
-
-	/*if (inst->m_Socket->bEndGame == true)
-	{
-		FMovieSceneSequencePlaybackSettings PlaybackSettings;
-		ALevelSequenceActor* SequenceActor;
-		ULevelSequencePlayer* LevelSequencePlayer = ULevelSequencePlayer::CreateLevelSequencePlayer(
-			GetWorld(),
-			EndGameCine,
-			PlaybackSettings,
-			SequenceActor
-		);
-
-		if (LevelSequencePlayer)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("endgame2"));
-			bCrosshiar = false;
-			LevelSequencePlayer->Play();
-			LevelSequencePlayer->OnFinished.AddDynamic(this, &ACharacterBase::SendEnd);
-		}
-		inst->m_Socket->bEndGame = false;
-	}*/
 
 }
 

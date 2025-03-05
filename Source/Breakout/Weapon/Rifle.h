@@ -4,20 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "Weapon/WeaponBase.h"
-#include "ShotGun.generated.h"
+#include "Rifle.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class BREAKOUT_API AShotGun : public AWeaponBase
+class BREAKOUT_API ARifle : public AWeaponBase
 {
 	GENERATED_BODY()
 	
-public:
-	AShotGun();
+protected:
 	virtual void Fire(const FVector& HitTarget) override;
-private:
-	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
-	uint32 NumberOfPellets = 6; //한번에 발사량
 };

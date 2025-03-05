@@ -1,5 +1,4 @@
-#pragma region MyRegion
-
+#pragma
 #include "Player/CharacterController.h"
 #include "HUD/MainHUD.h"
 #include "HUD/CharacterUi.h"
@@ -40,7 +39,6 @@
 #include "LevelSequencePlayer.h"
 #include "FX/Skill4StartActor.h"
 
-#pragma endregion
 ACharacterController::ACharacterController()
 {
 	//c_socket = ClientSocket::GetSingleton();
@@ -56,10 +54,8 @@ ACharacterController::ACharacterController()
 
 void ACharacterController::BeginPlay()
 {
-	//FInputModeGameOnly GameOnlyInput;
-	//SetInputMode(GameOnlyInput);
+
 	MainHUD = Cast<AMainHUD>(GetHUD());
-	//inst = Cast<UBOGameInstance>(GetGameInstance());
 	m_GameMode = Cast<ABOGameMode>(GetWorld()->GetAuthGameMode());
 
 	inst = Cast<UBOGameInstance>(GetGameInstance());
@@ -123,8 +119,6 @@ void ACharacterController::SetChName()
 {
 	if (MainHUD)
 	{
-		/*if (inst->m_Socket->tempid == 0)
-		{*/
 		if (inst->m_Socket->Tempname.size() > 0)
 		{
 			FString Player1 = inst->m_Socket->Tempname.front();
@@ -132,14 +126,7 @@ void ACharacterController::SetChName()
 			FString Player2 = inst->m_Socket->Tempname.back();
 			MainHUD->EscapeToolNumUi->Player2Ch->SetText(FText::FromString(Player2));
 		}
-	/*	}*/
-		/*else if (inst->m_Socket->tempid == 1)
-		{
-			FString Player1 = inst->m_Socket->TempName;
-			MainHUD->EscapeToolNumUi->Player1Ch->SetText(FText::FromString(Player1));
-			FString Player2 = inst->m_Socket->TempName2;
-			MainHUD->EscapeToolNumUi->Player2Ch->SetText(FText::FromString(Player2));
-		}*/
+
 	}
 }
 
@@ -159,17 +146,6 @@ void ACharacterController::SetNum()
 	}
 }
 
-//void ACharacterController::OnPossess(APawn* InPawn)
-//{
-//	Super::OnPossess(InPawn);
-//
-//	ACharacterBase* Ch = Cast<ACharacterBase>(InPawn);
-//	if (Ch)
-//	{
-//		Ch->SetWeaponUi();
-//	}
-//
-//}
 void ACharacterController::SetHUDHealth(float Health, float MaxHealth)
 {
 	if (MainHUD)
@@ -349,19 +325,12 @@ void ACharacterController::Tick(float DeltaTime)
 	//새 플레이어 스폰
 	if (bNewPlayerEntered)
 		UpdateSyncPlayer();
-	//if(NewItem.size() == 1)
-	//	UpdateSyncItem();
 
 	UpdateWorld();
-	//UE_LOG(LogTemp, Warning, TEXT("HHHHHH : %s"), *GetOwner()->GetVelocity().ToString());
-	//UpdatePlayer();
-	//SleepEx(0, true);
+
 	ACharacterBase* BaseCharacter = Cast<ACharacterBase>(GetPawn());
 	if (BaseCharacter)
 	{
-		//UE_LOG(LogClass, Warning, TEXT("hp : %f"), DamagedHp);
-		//BaseCharacter->SetHealth(DamgeHp);
-		//UE_LOG(LogTemp, Warning, TEXT("my health : %f"), BaseCharacter->GetHealth());
 		UGameplayStatics::ApplyDamage(
 			GetOwner(),
 			damaged,
@@ -388,11 +357,6 @@ void ACharacterController::Tick(float DeltaTime)
 	}
 }
 
-void ACharacterController::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	/*c_socket->CloseSocket();
-	c_socket->StopListen();*/
-}
 
 
 void ACharacterController::SetInitPlayerInfo(const CPlayer& owner_player)
@@ -526,11 +490,7 @@ bool ACharacterController::UpdateWorld()
 			float InterpolatedPitch = FMath::FInterpTo(CurrentPitch, NewPitch, DeltaTime, InterpSpeed);
 			OtherPlayer->SetAO_YAW(InterpolatedYaw);
 			OtherPlayer->SetAO_PITCH(InterpolatedPitch);
-			////aim_offset
-			//float AO_YAW = info->AO_YAW;
-			//float AO_PITCH = info->AO_PITCH;
-			//OtherPlayer->SetAO_PITCH(AO_PITCH);
-			//OtherPlayer->SetAO_YAW(AO_YAW);
+
 			EMovementMode PreviousMode = OtherPlayer->GetCharacterMovement()->MovementMode;
 			EMovementMode G;
 			switch (info->jumpType)
@@ -1137,43 +1097,6 @@ void ACharacterController::UpdateSyncPlayer()
 	bNewPlayerEntered = false;
 }
 
-
-//void ACharacterController::UpdateSyncItem()
-//{
-//	UWorld* const world = GetWorld();
-//	int size_ = NewItem.size();
-//	for (int i = 0; i < size_; ++i)
-//	{
-//		UE_LOG(LogTemp, Warning, TEXT("UpdateSyncItem"));
-//
-//		FVector S_LOCATION;
-//		S_LOCATION.X = NewItem.front()->X;
-//		S_LOCATION.Y = NewItem.front()->Y;
-//		S_LOCATION.Z = NewItem.front()->Z;
-//		FRotator S_ROTATOR;
-//		S_ROTATOR.Yaw = 0.0f;
-//		S_ROTATOR.Pitch = 0.0f;
-//		S_ROTATOR.Roll = 0.0f;
-//		FActorSpawnParameters SpawnActor;
-//		SpawnActor.Owner = this;
-//		SpawnActor.Instigator = GetInstigator();
-//		SpawnActor.Name = FName(*FString(to_string(NewItem.front()->Id).c_str()));
-//		AEscapeTool* SpawnCharacter = world->SpawnActor<AEscapeTool>(ItemSpawn,
-//			S_LOCATION, S_ROTATOR, SpawnActor);
-//		if (ItemInfo != nullptr)
-//		{
-//			CItem info;
-//			info.Id = NewItem.front()->Id;
-//			info.X = NewItem.front()->X;
-//			info.Y = NewItem.front()->Y;
-//			info.Z = NewItem.front()->Z;
-//			ItemInfo->items[NewItem.front()->Id] = info;
-//		}
-//		NewItem.front() = nullptr;
-//		NewItem.pop();
-//	}
-//}
-
 void ACharacterController::UpdatePlayer()
 {
 	auto m_Player = Cast<ACharacterBase>(UGameplayStatics::GetPlayerCharacter(this, 0));
@@ -1210,8 +1133,6 @@ void ACharacterController::Set_Weapon_Type(EWeaponType Type)
 	}
 }
 
-
-
 //pawn 
 void ACharacterController::OnPossess(APawn* InPawn)
 {
@@ -1220,8 +1141,8 @@ void ACharacterController::OnPossess(APawn* InPawn)
 
 	if (BaseCharacter)
 	{
-		SetHUDHealth(BaseCharacter->GetHealth(), BaseCharacter->MaxGetHealth());
-		SetHUDStamina(BaseCharacter->GetStamina(), BaseCharacter->MaxGetStamina());
+		SetHUDHealth(BaseCharacter->GetHealth(), BaseCharacter->GetMaxHealth());
+		SetHUDStamina(BaseCharacter->GetStamina(), BaseCharacter->GetMaxStamina());
 		FInputModeUIOnly UiGameInput;
 		SetInputMode(UiGameInput);
 		DisableInput(this);

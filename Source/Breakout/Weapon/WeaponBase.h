@@ -13,24 +13,20 @@ class BREAKOUT_API AWeaponBase : public AActor
 	
 public:
 	AWeaponBase();
-	virtual void Tick(float DeltaTime) override;
-	virtual void Fire(const FVector& HitTarget);
+	virtual void Fire(const FVector& HitTarget) {};
 	FORCEINLINE float GetFirerate() { return Firerate; }
 	void DetectTool(FVector& HitRes);
-	UPROPERTY(EditAnywhere)
-	float Damage = 10.f;
 
-	UPROPERTY(EditAnywhere)
-	int32 CurAmmo = 10;
 
-	UPROPERTY(EditAnywhere)
-	int32 MaxAmmo = 10;
+	float GetCurAmmo() { return CurAmmo; }
+	float GetMaxAmmo() { return MaxAmmo; }
+	void SetCurAmmo(float Ammo) {CurAmmo = Ammo;}
 
 	class USoundCue* GetReloadSound() { return ReloadSound; }
 
 	bool bDebug = false;
 protected:
-	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	UPROPERTY(EditAnywhere)
 	TObjectPtr<class USkeletalMeshComponent> WeaponMesh;
 
 	UPROPERTY(EditAnywhere)
@@ -42,6 +38,13 @@ protected:
 	TObjectPtr<class USoundCue> FireSound;
 	UPROPERTY(EditAnywhere, Category = "Sound")
 	TObjectPtr<class USoundCue> ReloadSound;
+
+	UPROPERTY(EditAnywhere)
+	float Damage = 10.f;
+	UPROPERTY(EditAnywhere)
+	int32 CurAmmo = 10;
+	UPROPERTY(EditAnywhere)
+	int32 MaxAmmo = 10;
 
 	//√—æÀ »Â≈Õ¡¸ ø‰º“µÈ
 	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
@@ -60,7 +63,9 @@ protected:
 public:
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	float Range = 1500.f;
+
 protected:
+	virtual void Tick(float DeltaTime) override;
 	virtual void BeginPlay() override;
 
 	FVector TraceEndWithScatter(const FVector& TraceStart, const FVector& HitTarget);
@@ -68,8 +73,7 @@ protected:
 
 
 public:
-	//UPROPERTY(EditAnywhere)
-	//TObjectPtr<class UNiagaraSystem> BeamNiagara;
+
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<class UNiagaraSystem> ImpactNiagara;
 	UPROPERTY(EditAnywhere)

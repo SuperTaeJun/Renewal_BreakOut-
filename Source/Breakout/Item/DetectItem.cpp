@@ -17,12 +17,11 @@ void ADetectItem::Tick(float DeltaTime)
 }
 void ADetectItem::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	UE_LOG(LogTemp, Warning, TEXT(" OVERLAP"));
+	//UE_LOG(LogTemp, Warning, TEXT(" OVERLAP"));
 	ACharacterBase* OverlapCh = Cast<ACharacterBase>(OtherActor);
 
 	if (OverlapCh)
 	{
-		UE_LOG(LogTemp, Warning, TEXT(" OVERLAP2"));
 		TArray<AActor*> Characters;
 		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACharacterBase::StaticClass(), Characters);
 		for (AActor* Character : Characters)
