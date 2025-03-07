@@ -86,7 +86,6 @@ ACharacterBase::ACharacterBase()
 	GrendeNum = 3;
 	WallGrendeNum = 3;
 	BoobyTrapNum = 3;
-	//bShowSelectUi = false;
 	ObtainedEscapeToolNum = 0;
 	CurWeaponType = EWeaponType::ECS_DEFAULT;
 	bStarted = false;
@@ -277,7 +276,7 @@ void ACharacterBase::SetWeapon(TSubclassOf<class AWeaponBase> Weapon, FName Sock
 {
 	if (!CurWeapon)
 	{
-		RightSocketName = SocketName;
+		RightHandSocketName = SocketName;
 
 		FActorSpawnParameters SpawnParameters;
 		SpawnParameters.Owner = this;
@@ -340,7 +339,7 @@ void ACharacterBase::GrandeThrowFinish()
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	Cast<UBOAnimInstance>(AnimInstance)->bUseLeftHand = true;
-	const USkeletalMeshSocket* WeaponSocket = GetMesh()->GetSocketByName(RightSocketName);
+	const USkeletalMeshSocket* WeaponSocket = GetMesh()->GetSocketByName(RightHandSocketName);
 
 	CurWeapon->SetActorHiddenInGame(false);
 	//bUsingThrowMontage = false;
@@ -938,10 +937,10 @@ void ACharacterBase::SelectTrap(const FInputActionValue& Value)
 
 void ACharacterBase::StartJump(const FInputActionValue& Value)
 {
-	if (CanJump && CurWeapon)
+	if (bCanJump && CurWeapon)
 		Super::Jump();
 
-	CanJump = false;
+	bCanJump = false;
 
 }
 
@@ -1049,7 +1048,7 @@ void ACharacterBase::Tick(float DeltaTime)
 
 	if (!Movement->IsFalling())
 	{
-		CanJump = true;
+		bCanJump = true;
 	}
 	if (bStamina)
 		UpdateStamina(DeltaTime);

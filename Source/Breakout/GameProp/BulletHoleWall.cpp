@@ -72,16 +72,14 @@ void ABulletHoleWall::ReciveDamage(AActor* DamagedActor, float Damage, const UDa
 		{
 			for (int j = 0; j < 3; ++j)
 			{
-				//for (int k = 0; k < 1; ++k)
-				//{
 				FVector Loc = FVector(i, j, 0) * 30.f;
 				FTransform DataATransform;
 				FTransform SculptureTransform;
 				SculptureTransform.SetLocation(Loc);
 				SculptureTransform.SetScale3D(FVector(0.5, 0.5, 0.5));
-				MeshDataStorage.Add(ProcMeshUtillity->MeshBoolean(MeshDataA, DataATransform, ProcMeshUtillity->SetRandomVertex(SculptureData, -3.f, 10.f, 0.1f), SculptureTransform, false));
+				MeshDataStorage.Add(ProcMeshUtillity->MeshBoolean(MeshDataA, DataATransform, 
+					ProcMeshUtillity->SetRandomVertex(SculptureData, -3.f, 10.f, 0.1f), SculptureTransform, false));
 
-				//}
 			}
 		}
 		MeshSculptures.SetNum(MeshDataStorage.Num());

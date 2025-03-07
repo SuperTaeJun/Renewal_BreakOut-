@@ -329,7 +329,6 @@ MeshData UProceduralMeshUtility::SetRandomVertex(MeshData& Data, float Min, floa
 
 	DistanceThreshold = 1.0f / DistanceThreshold;
 
-	//임시로 저장
 	FVector ApproximateCoord;
 
 	for (int VertexIndex = 0; VertexIndex < Data.Verts.Num(); ++VertexIndex)

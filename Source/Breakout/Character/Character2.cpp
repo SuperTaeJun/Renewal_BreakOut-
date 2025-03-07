@@ -108,7 +108,7 @@ void ACharacter2::DashSetup(float _MaxWalk, float _MaxAcc, FRotator _Rotation, b
 	MovementComp->RotationRate = _Rotation;
 	GetMesh()->SetVisibility(_Visibillity);
 	CurWeapon->GetWeaponMesh()->SetVisibility(_Visibillity);
-	CanJump = false;
+	bCanJump = false;
 	NiagaraComp->Deactivate();
 	//DisableInput(UGameplayStatics::GetPlayerController(GetWorld(),0));
 }
@@ -128,7 +128,7 @@ void ACharacter2::DashFinishSetup()
 		CurWeapon->GetSpotLight()->SetVisibility(true);
 	else
 		CurWeapon->GetSpotLight()->SetVisibility(false);
-	CanJump = true;
+	bCanJump = true;
 	bSkillUsing = false;
 	//EnableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 }

@@ -18,17 +18,24 @@ class BREAKOUT_API ACharacterBase : public ACharacter
 
 public:
 	ACharacterBase();
-
-
-	FORCEINLINE ETurningInPlace GetTurningType() { return TurningType; }
-
-	FORCEINLINE float GetAO_Yaw() const { return AO_Yaw; }
-	FORCEINLINE float GetAO_Pitch() const { return AO_Pitch; }
-	void SetAO_YAW(float Servao_yaw) { AO_Yaw = Servao_yaw; }
-	void SetAO_PITCH(float Servao_pitch) { AO_Pitch = Servao_pitch; }
-	class AWeaponBase* GetCurWeapon() const { return CurWeapon; }
-	void UpdateObtainedEscapeTool();
 	int		_SessionId;
+
+protected:
+	UPROPERTY(EditAnywhere, Category = Arrow)
+	TObjectPtr<class UArrowComponent> PathSorce;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<class UNiagaraComponent> Aim;
+
+	UPROPERTY(VisibleAnywhere, Category = Camera)
+	TObjectPtr<class USpringArmComponent> CameraBoom;
+
+	UPROPERTY(VisibleAnywhere, Category = Camera)
+	TObjectPtr<class UCameraComponent> FollowCamera;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UCharacterMovementComponent> Movement;
+
 
 protected:
 	virtual void BeginPlay() override;
@@ -39,7 +46,6 @@ protected:
 	void UpdateCameraBoom(float DeltaTime);
 	void UpdateStamina(float DeltaTime);
 	void SetHUDCrosshair(float DeltaTime);
-	//void UpdateObtainedEscapeTool();
 
 	//캐릭터 상태
 	UPROPERTY(EditAnywhere, Category = "Player Stats")
@@ -53,8 +59,12 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Player Stats")
 	float DeadTime = 4.f;
 
+	TObjectPtr<class AMainHUD> MainHUD;
+	TObjectPtr<class ACharacterController> MainController;
+
 	bool bCanEscape;
 	bool StaminaExhaustionState;
+	bool bAlive = true;
 
 	int32 GrendeNum;
 	int32 WallGrendeNum;
@@ -74,10 +84,21 @@ protected:
 
 	TObjectPtr<class AEscapeTool> OverlappingEscapeTool;
 
+	//디졸브
+	bool bDissolve = false;
+	float DissolvePercent = -1.f;
+	TObjectPtr<class UMaterialInstanceDynamic> MDynamicDissolveInst;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<class UMaterialInstance> MDissolveInst;
+	//
+
 public:
 	void UpdateHpHUD();
 	void UpdateStaminaHUD();
+	void UpdateObtainedEscapeTool();
 
+	void SetAO_YAW(float Servao_yaw) { AO_Yaw = Servao_yaw; }
+	void SetAO_PITCH(float Servao_pitch) { AO_Pitch = Servao_pitch; }
 	void SetResetState();
 	void SetWeaponType(EWeaponType Type) { CurWeaponType = Type; }
 	void SetbCanEscape(bool _bCanEscape) { bCanEscape = _bCanEscape; }
@@ -93,8 +114,12 @@ public:
 	void SetHealth(float DamagedHp) { Health = DamagedHp; }
 	void SetMaxHealth(float MaxHp) { MaxHealth = MaxHp; }
 	void SetOverlappingEscapeTool(class AEscapeTool* _OverlappingEscapeTool) { OverlappingEscapeTool = _OverlappingEscapeTool; }
+	void SetbAlive(bool _bAlive) {bAlive = _bAlive;}
 
-
+	class AWeaponBase* GetCurWeapon() const { return CurWeapon; }
+	ETurningInPlace GetTurningType() { return TurningType; }
+	float GetAO_Yaw() const { return AO_Yaw; }
+	float GetAO_Pitch() const { return AO_Pitch; }
 	class AEscapeTool* GetOverlappingEscapeTool() { return OverlappingEscapeTool; }
 	bool GetbInRespon() { return bInRespon; }
 	float GetDissolvePersent() { return DissolvePercent; }
@@ -110,7 +135,7 @@ public:
 	float GetMaxStamina() const { return MaxStamina; }
 	bool GetbFfirePressed() const { return bFirePressed; }
 	FVector GetHitTarget() { return HitTarget; }
-
+	bool GetbAlive() { return bAlive; }
 
 
 	UFUNCTION()
@@ -134,34 +159,7 @@ public:
 	FTimerHandle DeadTimer;
 	TObjectPtr<class AWeaponBase> CurWeapon;
 
-	bool bAlive = true;
 protected:
-
-	UPROPERTY(EditAnywhere, Category = Arrow)
-	TObjectPtr<class UArrowComponent> PathSorce;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TObjectPtr<class UNiagaraComponent> Aim;
-
-	UPROPERTY(VisibleAnywhere, Category = Camera)
-	TObjectPtr<class USpringArmComponent> CameraBoom;
-
-	UPROPERTY(VisibleAnywhere, Category = Camera)
-	TObjectPtr<class UCameraComponent> FollowCamera;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UCharacterMovementComponent> Movement;
-
-	//디졸브
-	bool bDissolve = false;
-	float DissolvePercent = -1.f;
-	TObjectPtr<class UMaterialInstanceDynamic> MDynamicDissolveInst;
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<class UMaterialInstance> MDissolveInst;
-	//
-
-	TObjectPtr<class AMainHUD> MainHUD;
-	TObjectPtr<class ACharacterController> MainController;
 
 	UPROPERTY(EditAnywhere, Category = Animation)
 	TObjectPtr<class UAnimMontage> FireActionMontage;
@@ -176,7 +174,6 @@ protected:
 	UPROPERTY(EditAnywhere, Category = Animation)
 	TObjectPtr<class UAnimMontage> HitMontage;
 
-	FName RightSocketName;
 
 	//수류탄
 	UPROPERTY(EditAnywhere)
@@ -200,6 +197,8 @@ protected:
 	float AO_Pitch;
 	FRotator StartingAimRotation;
 
+	FName RightHandSocketName;
+
 	//fire
 	bool bCanFire;
 	bool bFirePressed;
@@ -211,6 +210,7 @@ protected:
 	void TraceUnderCrossHiar(FHitResult& TraceHitResult);
 	void PlayFireActionMontage();
 
+	bool bCanJump = true;
 	bool bInRespon;
 	bool bShowSelectUi;
 	bool bCanObtainEscapeTool;
@@ -226,6 +226,7 @@ protected:
 	TObjectPtr<class UTexture2D> CrosshairsTop;
 	UPROPERTY(EditAnywhere, Category = Crosshair)
 	TObjectPtr<class UTexture2D> CrosshairsBottom;
+
 	//크로스헤어기준으로 사거리만큼 조준했을때 마지막 충돌위치
 	FVector HitTarget;
 
@@ -235,8 +236,6 @@ protected:
 
 	//입력값
 protected:
-	bool CanJump = true;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	TObjectPtr<class UInputMappingContext> DefalutMappingContext;
 

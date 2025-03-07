@@ -625,7 +625,7 @@ bool ACharacterController::UpdateWorld()
 			}
 			//Ã¼·Â
 			OtherPlayer->SetHealth(SyncHP);
-			OtherPlayer->bAlive = info->bAlive;
+			OtherPlayer->SetbAlive(info->bAlive);
 
 			if (info->bGetWeapon == true)
 			{
