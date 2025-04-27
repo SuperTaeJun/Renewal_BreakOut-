@@ -305,7 +305,7 @@ public:
 	UFUNCTION()
 	void SendEnd();
 	void SpawnBeam(FVector StartBeam, FVector EndBeam);
-	void SpawnHitImpact(FVector HitLoc, FRotator HitRot);
+	//void SpawnHitImpact(FVector HitLoc, FRotator HitRot);
 	bool bStarted;
 	FTimerHandle StartHandle;
 	UFUNCTION()

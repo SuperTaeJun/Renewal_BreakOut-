@@ -41,179 +41,134 @@ AWeaponBase::AWeaponBase()
 	SpotLight->SetVisibility(false);
 }
 
+
 // Called when the game starts or when spawned
 void AWeaponBase::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	SetWeaponData();
+}
+void AWeaponBase::PlayFireEffect()
+{
+	if (FireSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+	}
+}
+void AWeaponBase::SendFirePacket()
+{
+}
+void AWeaponBase::Reload()
+{
+	if (CurAmmo >= WeaponData.MaxAmmo)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Already full ammo!"));
+		return;
+	}
+
+	CurAmmo = WeaponData.MaxAmmo;
+}
+void AWeaponBase::SetWeaponData()
+{
+
+	if (WeaponDataTable)
+	{
+		const FWeaponData* LoadedData = WeaponDataTable->FindRow<FWeaponData>(WeaponDataID, TEXT("WeaponData Lookup"));
+
+		if (LoadedData)
+		{
+			WeaponData = *LoadedData; // 복사
+			UE_LOG(LogTemp, Log, TEXT("Weapon data loaded: %s"), *WeaponDataID.ToString());
+			CurAmmo = WeaponData.MaxAmmo;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Weapon data not found for ID: %s"), *WeaponDataID.ToString());
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("WeaponDataTable not assigned!"));
+	}
+
+}
+
+void AWeaponBase::Fire(const FVector& HitTarget)
+{
+	if (CurAmmo <= 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No Ammo left!"));
+		return;
+	}
+
+	CurAmmo--;
+
+	PlayFireEffect();
+	SendFirePacket();
+	FireInternal(HitTarget);
 }
 
 FVector AWeaponBase::TraceEndWithScatter(const FVector& TraceStart, const FVector& HitTarget)
 {
-
-	// 목표 위치와 시작 위치의 방향을 정규화
 	FVector DirectionToTarget = (HitTarget - TraceStart).GetSafeNormal();
-	// 시작 위치에서 목표 방향으로 DistanceToSphere만큼 이동한 지점을 구의 중심으로 설정합니다.
-	FVector SphereCenter = TraceStart + DirectionToTarget * DistanceToSphere;
-	// 구의 내부에서 난수로 생성된 벡터를 계산하여 랜덤 위치를 만듭니다.
-	FVector RandVector = UKismetMathLibrary::RandomUnitVector() * FMath::FRandRange(0.f, SphereRadius);
-	// 구의 중심에 난수 벡터를 추가하여 최종 위치를 계산합니다.
+	FVector SphereCenter = TraceStart + DirectionToTarget * WeaponData.DistanceToSphere;
+	FVector RandVector = UKismetMathLibrary::RandomUnitVector() * FMath::FRandRange(0.f, WeaponData.SphereRadius);
 	FVector EndLoc = SphereCenter + RandVector;
-	// 시작 위치에서 최종 위치까지의 벡터를 계산합니다.
 	FVector DirToEndLoc = EndLoc - TraceStart;
 
-	if (bDebug)
-	{
-		DrawDebugSphere(GetWorld(), SphereCenter, SphereRadius, 12, FColor::Red, false, 0.5f);
-		DrawDebugSphere(GetWorld(), EndLoc, 4.f, 12, FColor::Orange, false, 0.5f);
-		DrawDebugLine(
-			GetWorld(),
-			TraceStart,
-			FVector(TraceStart + DirToEndLoc * 1000.f / DirToEndLoc.Size()),
-			FColor::Cyan,
-			false,
-			0.5f);
-	}
 	return FVector(TraceStart + DirToEndLoc);
 }
 
 void AWeaponBase::WeaponTraceHit(const FVector& TraceStart, const FVector& HitTarget, FHitResult& OutHit)
 {
-
 	UWorld* World = GetWorld();
-	if (World)
-	{
-		FVector End = bUseScatter ? TraceEndWithScatter(TraceStart, HitTarget) : TraceStart + (HitTarget - TraceStart) * 1.25f;
+	if (!World) return;
 
-		World->LineTraceSingleByChannel
-		(
-			OutHit,
-			TraceStart,
-			End,
-			ECollisionChannel::ECC_Visibility
-		);
-		//DrawDebugLine
-		//(
-		//	World,
-		//	TraceStart,
-		//	End,
-		//	FColor::Cyan,
-		//	false,
-		//	0.5f
-		//);
+	FVector End = WeaponData.bUseScatter ? TraceEndWithScatter(TraceStart, HitTarget) : (TraceStart + (HitTarget - TraceStart) * 1.25f);
 
-		FVector BeamEnd = End;
-		if (OutHit.bBlockingHit)
-		{
-			BeamEnd = OutHit.ImpactPoint;
-		}
-
-	}
+	World->LineTraceSingleByChannel(OutHit, TraceStart, End, ECC_Visibility);
 }
 
 void AWeaponBase::SetDetectNiagara(bool bUse)
 {
-	if (bUse)
+	if (DetectNiagara)
 	{
-		DetectNiagara->Activate();
-	}
-	else
-	{
-		DetectNiagara->Deactivate();
+		bUse ? DetectNiagara->Activate() : DetectNiagara->Deactivate();
 	}
 }
 
 void AWeaponBase::DetectTool(FVector& HitRes)
 {
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
-	if (OwnerPawn == nullptr) return;
-	AController* InstigatorController = OwnerPawn->GetController();
+	if (!OwnerPawn) return;
 
-	const USkeletalMeshSocket* MuzzleSocket = GetWeaponMesh()->GetSocketByName("MuzzleFlash");
-	if (MuzzleSocket && InstigatorController)
+	const USkeletalMeshSocket* MuzzleSocket = WeaponMesh->GetSocketByName(TEXT("MuzzleFlash"));
+	if (!MuzzleSocket) return;
+
+	FVector Start = MuzzleSocket->GetSocketTransform(WeaponMesh).GetLocation();
+	FHitResult DetectHit;
+	TArray<AActor*> IgnoredActors;
+
+	UKismetSystemLibrary::SphereTraceSingle(
+		GetWorld(),
+		Start,
+		Start + (HitRes - Start) * 0.5f,
+		30.f,
+		ETraceTypeQuery::TraceTypeQuery1,
+		true,
+		IgnoredActors,
+		EDrawDebugTrace::None,
+		DetectHit,
+		true
+	);
+
+	if (DetectHit.bBlockingHit)
 	{
-		//UE_LOG(LogTemp, Log, TEXT("TTEST"));
-		FTransform SocketTransform = MuzzleSocket->GetSocketTransform(GetWeaponMesh());
-		FVector Start = SocketTransform.GetLocation();
-		FHitResult DetectHit;
-		TArray<AActor*> DetectOutput;
-		UKismetSystemLibrary::SphereTraceSingle
-		(
-			GetWorld(),
-			Start,
-			Start + (HitRes - Start) * 0.5f,
-			30.f,
-			ETraceTypeQuery::TraceTypeQuery1,
-			true,
-			DetectOutput,
-			EDrawDebugTrace::None,
-			DetectHit,
-			true
-		);
-
-		if (DetectHit.bBlockingHit)
+		if (ImpactNiagara)
 		{
-			if (Cast<AEscapeTool>(DetectHit.GetActor()))
-			{
-				UE_LOG(LogTemp, Warning, TEXT("DETECT"));
-				Cast<AEscapeTool>(DetectHit.GetActor())->SetbDetected(true);
-
-				if (ImpactNiagara)
-				{
-					UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ImpactNiagara, DetectHit.ImpactPoint);
-				}
-			}
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ImpactNiagara, DetectHit.ImpactPoint);
 		}
 	}
 }
 
-// Called every frame
-void AWeaponBase::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
 
-}
-
-//void AWeaponBase::Fire(const FVector& HitTarget)
-//{
-//	APawn* OwnerPawn = Cast<APawn>(GetOwner());
-//	if (OwnerPawn == nullptr) return;
-//
-//	const USkeletalMeshSocket* MuzzleSocket = GetWeaponMesh()->GetSocketByName("MuzzleFlash");
-//	if (MuzzleSocket)
-//	{
-//		FTransform SocketTransform = MuzzleSocket->GetSocketTransform(GetWeaponMesh());
-//		FVector Start = SocketTransform.GetLocation();
-//
-//		FVector ToTarget = bUseScatter ? TraceEndWithScatter(Start, HitTarget) : Start + (HitTarget - Start) * 1.25f;
-//		ToTarget = ToTarget - SocketTransform.GetLocation();
-//
-//		FRotator ToTargetRot = ToTarget.Rotation();
-//		if (ProjectileBulletClass && OwnerPawn)
-//		{
-//			FActorSpawnParameters SpawnParameters;
-//			SpawnParameters.Owner = OwnerPawn;
-//			SpawnParameters.Instigator = OwnerPawn;
-//			UWorld* World = GetWorld();
-//			AProjectileBullet* FiredBullet = nullptr;
-//			if (World)
-//			{
-//				FiredBullet=World->SpawnActor<AProjectileBullet>(ProjectileBulletClass, SocketTransform.GetLocation(), ToTargetRot, SpawnParameters);
-//
-//				Cast<UBOGameInstance>(GetGameInstance())->m_Socket->Send_Fire_Effect(
-//					Cast<ACharacterBase>(GetOwner())->_SessionId, SocketTransform.GetLocation(), ToTargetRot, 0
-//				);
-//				FiredBullet->SetOwner(OwnerPawn);
-//			}
-//			if (FireSound)
-//			{
-//				UGameplayStatics::PlaySoundAtLocation(
-//					this,
-//					FireSound,
-//					SocketTransform.GetLocation()
-//				);
-//			}
-//
-//		}
-//	}
-//}

@@ -15,46 +15,52 @@
 #include "NiagaraComponent.h"
 #include "Weapon/ProjectileBullet.h"
 
-void ARifle::Fire(const FVector& HitTarget)
+
+void ARifle::FireInternal(const FVector& HitTarget)
 {
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
-	if (OwnerPawn == nullptr) return;
+	if (!OwnerPawn) return;
 
-	const USkeletalMeshSocket* MuzzleSocket = GetWeaponMesh()->GetSocketByName("MuzzleFlash");
-	if (MuzzleSocket)
+	const USkeletalMeshSocket* MuzzleSocket = GetWeaponMesh()->GetSocketByName(TEXT("MuzzleFlash"));
+	if (!MuzzleSocket) return;
+
+	FTransform SocketTransform = MuzzleSocket->GetSocketTransform(GetWeaponMesh());
+	FVector Start = SocketTransform.GetLocation();
+	FVector Direction = WeaponData.bUseScatter ? TraceEndWithScatter(Start, HitTarget) - Start : (HitTarget - Start) * 1.25f;
+	FRotator ProjectileRotation = Direction.Rotation();
+
+	if (ProjectileBulletClass)
 	{
-		FTransform SocketTransform = MuzzleSocket->GetSocketTransform(GetWeaponMesh());
-		FVector Start = SocketTransform.GetLocation();
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = OwnerPawn;
+		SpawnParams.Instigator = OwnerPawn;
 
-		FVector ToTarget = bUseScatter ? TraceEndWithScatter(Start, HitTarget) : Start + (HitTarget - Start) * 1.25f;
-		ToTarget = ToTarget - SocketTransform.GetLocation();
-
-		FRotator ToTargetRot = ToTarget.Rotation();
-		if (ProjectileBulletClass && OwnerPawn)
+		AProjectileBullet* Bullet = GetWorld()->SpawnActor<AProjectileBullet>(ProjectileBulletClass, Start, ProjectileRotation, SpawnParams);
+		if (Bullet)
 		{
-			FActorSpawnParameters SpawnParameters;
-			SpawnParameters.Owner = OwnerPawn;
-			SpawnParameters.Instigator = OwnerPawn;
-			UWorld* World = GetWorld();
-			AProjectileBullet* FiredBullet = nullptr;
-			if (World)
-			{
-				FiredBullet = World->SpawnActor<AProjectileBullet>(ProjectileBulletClass, SocketTransform.GetLocation(), ToTargetRot, SpawnParameters);
+			Bullet->SetOwner(OwnerPawn);
+		}
+	}
+}
 
-				Cast<UBOGameInstance>(GetGameInstance())->m_Socket->Send_Fire_Effect(
-					Cast<ACharacterBase>(GetOwner())->_SessionId, SocketTransform.GetLocation(), ToTargetRot, 0
-				);
-				FiredBullet->SetOwner(OwnerPawn);
-			}
-			if (FireSound)
-			{
-				UGameplayStatics::PlaySoundAtLocation(
-					this,
-					FireSound,
-					SocketTransform.GetLocation()
-				);
-			}
+void ARifle::SendFirePacket()
+{
+	ACharacterBase* OwnerCharacter = Cast<ACharacterBase>(GetOwner());
+	if (!OwnerCharacter) return;
 
+	const USkeletalMeshSocket* MuzzleSocket = GetWeaponMesh()->GetSocketByName(TEXT("MuzzleFlash"));
+	if (!MuzzleSocket) return;
+
+	FTransform SocketTransform = MuzzleSocket->GetSocketTransform(GetWeaponMesh());
+	FVector Start = SocketTransform.GetLocation();
+	FVector Direction = WeaponData.bUseScatter ? TraceEndWithScatter(Start, Start + FVector(1, 0, 0)) - Start : FVector(1, 0, 0);
+	FRotator ProjectileRotation = Direction.Rotation();
+
+	if (UBOGameInstance* GI = Cast<UBOGameInstance>(GetGameInstance()))
+	{
+		if (GI->m_Socket)
+		{
+			GI->m_Socket->Send_Fire_Effect(OwnerCharacter->_SessionId, Start, ProjectileRotation, 0);
 		}
 	}
 }

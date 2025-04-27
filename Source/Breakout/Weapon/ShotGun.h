@@ -1,14 +1,9 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Weapon/WeaponBase.h"
 #include "ShotGun.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class BREAKOUT_API AShotGun : public AWeaponBase
 {
@@ -16,7 +11,9 @@ class BREAKOUT_API AShotGun : public AWeaponBase
 	
 public:
 	AShotGun();
-	virtual void Fire(const FVector& HitTarget) override;
+protected:
+	virtual void FireInternal(const FVector& HitTarget) override;
+	virtual void SendFirePacket() override;
 private:
 	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
 	uint32 NumberOfPellets = 6; //한번에 발사량

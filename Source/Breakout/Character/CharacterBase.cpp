@@ -33,7 +33,7 @@
 #include "Components/SpotLightComponent.h"
 #include "LevelSequence.h"
 #include "LevelSequencePlayer.h"
-
+#include "Data/WeaponData.h"
 
 ACharacterBase::ACharacterBase()
 {
@@ -386,7 +386,7 @@ void ACharacterBase::SpawnGrenade()
 
 void ACharacterBase::ReloadForMontage()
 {
-	CurWeapon->SetCurAmmo(CurWeapon->GetMaxAmmo());
+	CurWeapon->Reload();
 	MainController->SetHUDAmmo(CurWeapon->GetCurAmmo());
 	bCanFire = true;
 }
@@ -463,8 +463,8 @@ void ACharacterBase::ReciveDamage(AActor* DamagedActor, float Damage, const UDam
 			}
 			UpdateObtainedEscapeTool();
 		}
-		if (CurWeapon)
-			CurWeapon->SetCurAmmo(0);
+		//if (CurWeapon)
+		//	CurWeapon->SetCurAmmo(0);
 
 		if (bAlive && MainController)
 		{
@@ -555,7 +555,7 @@ void ACharacterBase::AimOffset(float DeltaTime)
 
 void ACharacterBase::StartFireTimer()
 {
-	GetWorldTimerManager().SetTimer(FireTimer, this, &ACharacterBase::FireTimerFinished, CurWeapon->GetFirerate());
+	GetWorldTimerManager().SetTimer(FireTimer, this, &ACharacterBase::FireTimerFinished, CurWeapon->GetWeaponData().FireRate);
 }
 
 void ACharacterBase::FireTimerFinished()
@@ -589,7 +589,6 @@ void ACharacterBase::Fire()
 		else
 			AddControllerPitchInput(-6.f);
 
-		CurWeapon->SetCurAmmo(CurWeapon->GetCurAmmo() - 1);
 		MainController->SetHUDAmmo(CurWeapon->GetCurAmmo());
 
 		StartFireTimer();
@@ -636,7 +635,7 @@ void ACharacterBase::TraceUnderCrossHiar(FHitResult& TraceHitResult)
 
 		if (CurWeapon)
 		{
-			FVector End = Start + CrossHairDirection * CurWeapon->Range;
+			FVector End = Start + CrossHairDirection * CurWeapon->GetWeaponData().Range;
 
 			GetWorld()->LineTraceSingleByChannel(
 				TraceHitResult,
@@ -1134,16 +1133,16 @@ void ACharacterBase::SpawnBeam(FVector StartBeam, FVector EndBeam)
 	//}
 }
 
-void ACharacterBase::SpawnHitImpact(FVector HitLoc, FRotator HitRot)
-{
-	UNiagaraFunctionLibrary::SpawnSystemAtLocation
-	(
-		GetWorld(),
-		CurWeapon->ImpactNiagara,
-		HitLoc,
-		HitRot
-	);
-}
+//void ACharacterBase::SpawnHitImpact(FVector HitLoc, FRotator HitRot)
+//{
+//	UNiagaraFunctionLibrary::SpawnSystemAtLocation
+//	(
+//		GetWorld(),
+//		CurWeapon->ImpactNiagara,
+//		HitLoc,
+//		HitRot
+//	);
+//}
 
 void ACharacterBase::StartGame()
 {

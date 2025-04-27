@@ -16,53 +16,57 @@ ARocketLauncher::ARocketLauncher()
 {
 }
 
-void ARocketLauncher::Fire(const FVector& HitTarget)
+void ARocketLauncher::FireInternal(const FVector& HitTarget)
 {
-	APawn* InstigatorPawn = Cast<APawn>(GetOwner());
-	const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName(FName("MuzzleFlash"));
-	if (MuzzleFlashSocket && InstigatorPawn)
-	{
-		FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
-		FVector ToTarget = HitTarget - SocketTransform.GetLocation();
-		FRotator TargetRotation = ToTarget.Rotation();
-		StartPos = SocketTransform.GetLocation();
-		CurWeaponRot = TargetRotation;
-		if (ProjectileLancherClass && InstigatorPawn)
-		{
-			FActorSpawnParameters SpawnParameters;
-			SpawnParameters.Owner = GetOwner();
-			SpawnParameters.Instigator = InstigatorPawn;
-			SpawnParm = SpawnParameters;
-			UWorld* World = GetWorld();
-			AProjectileBase* Projectile = nullptr;
-			if (World)
-			{
-				Projectile=World->SpawnActor<AProjectileBase>(ProjectileLancherClass, SocketTransform.GetLocation(), TargetRotation, SpawnParameters);
-				Projectile->SetOwner(GetOwner());
-				if (Cast<UBOGameInstance>(GetGameInstance()))
-					Cast<UBOGameInstance>(GetGameInstance())->m_Socket->Send_Fire_Effect(Cast<ACharacterBase>(GetOwner())->_SessionId, SocketTransform.GetLocation(), TargetRotation, 1);
-			}
-			if (ImpactNiagara)
-			{
-				UNiagaraFunctionLibrary::SpawnSystemAtLocation
-				(
-					World,
-					ImpactNiagara,
-					SocketTransform.GetLocation()
-				);
-			}
+    APawn* OwnerPawn = Cast<APawn>(GetOwner());
+    if (!OwnerPawn) return;
 
-			if (FireSound)
-			{
-				UGameplayStatics::PlaySoundAtLocation(
-					this,
-					FireSound,
-					SocketTransform.GetLocation()
-				);
-			}
+    const USkeletalMeshSocket* MuzzleSocket = GetWeaponMesh()->GetSocketByName(TEXT("MuzzleFlash"));
+    if (!MuzzleSocket) return;
 
+    FTransform SocketTransform = MuzzleSocket->GetSocketTransform(GetWeaponMesh());
+    FVector Start = SocketTransform.GetLocation();
+    FVector ToTarget = HitTarget - Start;
+    FRotator LaunchRotation = ToTarget.Rotation();
 
-		}
+    UWorld* World = GetWorld();
+    if (World && ProjectileLauncherClass)
+    {
+        FActorSpawnParameters SpawnParams;
+        SpawnParams.Owner = OwnerPawn;
+        SpawnParams.Instigator = OwnerPawn;
 
-	}
+        AProjectileBase* Rocket = World->SpawnActor<AProjectileBase>(ProjectileLauncherClass, Start, LaunchRotation, SpawnParams);
+        if (Rocket)
+        {
+            Rocket->SetOwner(OwnerPawn);
+        }
+
+        if (ImpactNiagara)
+        {
+            UNiagaraFunctionLibrary::SpawnSystemAtLocation(World, ImpactNiagara, Start);
+        }
+    }
+}
+
+void ARocketLauncher::SendFirePacket()
+{
+    ACharacterBase* OwnerCharacter = Cast<ACharacterBase>(GetOwner());
+    if (!OwnerCharacter) return;
+
+    const USkeletalMeshSocket* MuzzleSocket = GetWeaponMesh()->GetSocketByName(TEXT("MuzzleFlash"));
+    if (!MuzzleSocket) return;
+
+    FTransform SocketTransform = MuzzleSocket->GetSocketTransform(GetWeaponMesh());
+    FVector Start = SocketTransform.GetLocation();
+    FVector Direction = FVector(1, 0, 0); // 기본 방향 (가짜로 하나 넣음)
+    FRotator LaunchRotation = Direction.Rotation();
+
+    if (UBOGameInstance* GI = Cast<UBOGameInstance>(GetGameInstance()))
+    {
+        if (GI->m_Socket)
+        {
+            GI->m_Socket->Send_Fire_Effect(OwnerCharacter->_SessionId, Start, LaunchRotation, 1); // Rocket은 EffectType = 1
+        }
+    }
 }

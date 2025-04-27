@@ -15,5 +15,4 @@ class BREAKOUT_API UShoot : public ULegacyCameraShake
 	GENERATED_BODY()
 public:
 	UShoot();
-	UShoot(int Type);
 };

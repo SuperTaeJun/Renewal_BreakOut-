@@ -19,46 +19,67 @@ AShotGun::AShotGun()
 {
 }
 
-void AShotGun::Fire(const FVector& HitTarget)
+void AShotGun::FireInternal(const FVector& HitTarget)
 {
-	const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName("MuzzleFlash");
-	APawn* OwnerPawn = Cast<APawn>(GetOwner());
-	if (OwnerPawn == nullptr) return;
-	AController* InstigatorController = OwnerPawn->GetController();
-	if (MuzzleFlashSocket)
-	{
-		FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
-		FVector Start = SocketTransform.GetLocation();
-		TArray<FRotator> SeverRots;
-		for (uint32 i = 0; i < NumberOfPellets; i++)
-		{
-			FVector ToTarget = bUseScatter ? TraceEndWithScatter(Start, HitTarget) : Start + (HitTarget - Start) * 1.25f;
-			ToTarget = ToTarget - SocketTransform.GetLocation();
-			FRotator ToTargetRot = ToTarget.Rotation();
-			SeverRots.Add(ToTargetRot);
-			if (ProjectileBulletClass && OwnerPawn)
-			{
-				FActorSpawnParameters SpawnParameters;
-				SpawnParameters.Owner = GetOwner();
-				SpawnParameters.Instigator = OwnerPawn;
-				UWorld* World = GetWorld();
-				if (World)
-				{
-					World->SpawnActor<AProjectileBullet>(ProjectileBulletClass, SocketTransform.GetLocation(), ToTargetRot, SpawnParameters);
-					//서버 총알생성
-				}
-			}
+    APawn* OwnerPawn = Cast<APawn>(GetOwner());
+    if (!OwnerPawn) return;
 
-		}
-		if (FireSound)
-		{
-			UGameplayStatics::PlaySoundAtLocation(
-				this,
-				FireSound,
-				SocketTransform.GetLocation()
-			);
-		}
-		Cast<UBOGameInstance>(GetGameInstance())->m_Socket->Send_ShotGun_packet(Cast<UBOGameInstance>(GetGameInstance())->GetPlayerID(),  SocketTransform.GetLocation(), SeverRots, SeverRots.Num());
-	}
-	
+    const USkeletalMeshSocket* MuzzleSocket = GetWeaponMesh()->GetSocketByName(TEXT("MuzzleFlash"));
+    if (!MuzzleSocket) return;
+
+    FTransform SocketTransform = MuzzleSocket->GetSocketTransform(GetWeaponMesh());
+    FVector Start = SocketTransform.GetLocation();
+
+    UWorld* World = GetWorld();
+    if (!World) return;
+
+    for (uint32 i = 0; i < NumberOfPellets; i++)
+    {
+        FVector EndPoint = WeaponData.bUseScatter ? TraceEndWithScatter(Start, HitTarget) : (HitTarget);
+        FVector Direction = EndPoint - Start;
+        FRotator PelletRotation = Direction.Rotation();
+
+        if (ProjectileBulletClass)
+        {
+            FActorSpawnParameters SpawnParams;
+            SpawnParams.Owner = OwnerPawn;
+            SpawnParams.Instigator = OwnerPawn;
+
+            AProjectileBullet* Pellet = World->SpawnActor<AProjectileBullet>(ProjectileBulletClass, Start, PelletRotation, SpawnParams);
+            if (Pellet)
+            {
+                Pellet->SetOwner(OwnerPawn);
+            }
+        }
+    }
+}
+
+void AShotGun::SendFirePacket()
+{
+    ACharacterBase* OwnerCharacter = Cast<ACharacterBase>(GetOwner());
+    if (!OwnerCharacter) return;
+
+    const USkeletalMeshSocket* MuzzleSocket = GetWeaponMesh()->GetSocketByName(TEXT("MuzzleFlash"));
+    if (!MuzzleSocket) return;
+
+    FTransform SocketTransform = MuzzleSocket->GetSocketTransform(GetWeaponMesh());
+    FVector Start = SocketTransform.GetLocation();
+
+    TArray<FRotator> PelletRotations;
+
+    for (uint32 i = 0; i < NumberOfPellets; i++)
+    {
+        FVector EndPoint = WeaponData.bUseScatter ? TraceEndWithScatter(Start, Start + FVector(1, 0, 0)) : (Start + FVector(1, 0, 0));
+        FVector Direction = EndPoint - Start;
+        FRotator PelletRotation = Direction.Rotation();
+        PelletRotations.Add(PelletRotation);
+    }
+
+    if (UBOGameInstance* GI = Cast<UBOGameInstance>(GetGameInstance()))
+    {
+        if (GI->m_Socket)
+        {
+            GI->m_Socket->Send_ShotGun_packet(OwnerCharacter->_SessionId, Start, PelletRotations, PelletRotations.Num());
+        }
+    }
 }
