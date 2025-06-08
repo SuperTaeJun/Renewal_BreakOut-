@@ -119,3 +119,11 @@ void AProjectileBase::Tick(float DeltaTime)
 
 }
 
+void AProjectileBase::InitVelocity(const FVector& Velocity)
+{
+	if (ProjectileMovementComponent)
+	{
+		ProjectileMovementComponent->Velocity = Velocity;
+	}
+}
+

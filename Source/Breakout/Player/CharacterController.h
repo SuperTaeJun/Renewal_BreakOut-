@@ -11,6 +11,7 @@
 #include <memory>
 #include "Character/CharacterBase.h"
 #include "UWeaponManagerComponent.h"
+#include "Components/SubWeaponManagerComponent.h"
 #include "CharacterController.generated.h"
 
 //ClientSocket* c_socket = nullptr;

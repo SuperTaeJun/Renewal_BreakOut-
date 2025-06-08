@@ -33,6 +33,8 @@
 #include "LevelSequencePlayer.h"
 #include "Data/WeaponData.h"
 #include "UWeaponManagerComponent.h"
+#include "Components/SubWeaponManagerComponent.h"
+
 ACharacterBase::ACharacterBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -74,6 +76,8 @@ ACharacterBase::ACharacterBase()
 
 	Aim = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NiagaraAim"));
 	WeaponManager = CreateDefaultSubobject<UUWeaponManagerComponent>(TEXT("WeaponManager"));
+	SubWeaponManager = CreateDefaultSubobject<USubWeaponManagerComponent>(TEXT("SubWeaponManager"));
+	SubWeaponManager->InitializeSubWeapon(Grenade, PathSorce, Aim, FollowCamera);
 
 	//스테이트
 	MaxHealth = 100.f;
@@ -81,11 +85,7 @@ ACharacterBase::ACharacterBase()
 	MaxStamina = 100.f;
 	Stamina = MaxStamina;
 	StaminaExhaustionState = false;
-	GrendeNum = 3;
-	WallGrendeNum = 3;
-	BoobyTrapNum = 3;
 	ObtainedEscapeToolNum = 0;
-	//CurWeaponType = EWeaponType::ECS_DEFAULT;
 	bStarted = false;
 	StartedCnt = 5.f;
 	bCanEscape = false;
@@ -96,6 +96,7 @@ ACharacterBase::ACharacterBase()
 void ACharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
+
 
 
 	StartTransform = GetActorTransform();
@@ -112,15 +113,14 @@ void ACharacterBase::BeginPlay()
 
 	MainController = MainController == nullptr ? Cast<ACharacterController>(Controller) : MainController;
 
-	BojoMugiType = EBojoMugiType::ECS_DEFAULT;
-
 	if (MainController)
 	{
 		MainController->SetHUDSkill();
 		UpdateHpHUD();
 		UpdateStaminaHUD();
 		UpdateObtainedEscapeTool();
-		MainController->SetHUDBojoImage(BojoMugiType);
+		//MainController->SetHUDBojoImage(Sw);
+
 	}
 	if (Aim)
 		Aim->SetAutoActivate(false);
@@ -260,9 +260,7 @@ void ACharacterBase::SetResetState()
 	GetMesh()->SetMaterial(0, MDynamicDissolveInst);
 	MDynamicDissolveInst->SetScalarParameterValue(FName("Dissolve"), DissolvePercent);
 
-	GrendeNum = 3;
-	WallGrendeNum = 3;
-	BoobyTrapNum = 3;
+	SubWeaponManager->ResetNum();
 
 	//여기서 패킷
 	if (inst)
@@ -274,78 +272,6 @@ void ACharacterBase::SetbCanObtainEscapeTool(bool _bCanObtain)
 	bCanObtainEscapeTool = _bCanObtain;
 }
 
-void ACharacterBase::GrandeThrow()
-{
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	Cast<UBOAnimInstance>(AnimInstance)->bUseLeftHand = false;
-}
-void ACharacterBase::GrandeAim()
-{
-	WeaponManager->GetCurrentWeapon()->SetActorHiddenInGame(true);
-	Grenade->bHiddenInGame = false;
-
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	// 수류탄 투척 애니메이션
-	if (AnimInstance && GrenadeMontage)
-	{
-		if (inst)
-			inst->m_Socket->Send_BojoAnim_packet(inst->GetPlayerID(), 0);
-		PlayAnimMontage(GrenadeMontage, 1.5f);
-		//bUsingThrowMontage = true;
-		//bCanFire = false;
-		WeaponManager->bCanFire = false;
-	}
-}
-void ACharacterBase::GrandeThrowFinish()
-{
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	Cast<UBOAnimInstance>(AnimInstance)->bUseLeftHand = true;
-	const USkeletalMeshSocket* WeaponSocket = GetMesh()->GetSocketByName(RightHandSocketName);
-
-	WeaponManager->GetCurrentWeapon()->SetActorHiddenInGame(false);
-	//bUsingThrowMontage = false;
-	//bCanFire = true;
-	WeaponManager->bCanFire = true;
-	if (WeaponSocket && WeaponManager->GetCurrentWeapon())
-	{
-		WeaponSocket->AttachActor(WeaponManager->GetCurrentWeapon(), GetMesh());
-	}
-
-	//Grenade->bHiddenInGame = false;
-	Grenade->SetHiddenInGame(true);
-}
-
-void ACharacterBase::SpawnGrenade()
-{
-	//Grenade->bHiddenInGame = true;
-	Grenade->SetHiddenInGame(true);
-
-	switch (BojoMugiType)
-	{
-	case EBojoMugiType::E_Grenade:
-		if (GrendeNum > 0)
-		{
-			SetSpawnGrenade(GrenadeClass);
-			GrendeNum -= 1;
-		}
-		break;
-	case EBojoMugiType::E_Wall:
-		if (WallGrendeNum > 0)
-		{
-			SetSpawnGrenade(WallClass);
-			WallGrendeNum -= 1;
-		}
-		break;
-		//case EBojoMugiType::E_BoobyTrap:
-		//	SetSpawnGrenade(BoobyTrapClass);
-		//	break;
-	case EBojoMugiType::ECS_DEFAULT:
-		SetSpawnGrenade(GrenadeClass);
-		break;
-	}
-
-}
-
 void ACharacterBase::ReloadForMontage()
 {
 	if (WeaponManager)
@@ -354,36 +280,6 @@ void ACharacterBase::ReloadForMontage()
 	}
 }
 
-void ACharacterBase::SetSpawnGrenade(TSubclassOf<AProjectileBase> Projectile)
-{
-	//UE_LOG(LogTemp, Log, TEXT("GRENDADE SPAWN"));
-	if (Grenade)
-	{
-		const FVector StartLocation = GetMesh()->GetSocketLocation(FName("GrandeSocket"));
-		FVector ToHitTarget = HitTarget - StartLocation;
-		FActorSpawnParameters SpawnParms;
-		SpawnParms.Owner = this;
-		SpawnParms.Instigator = this;
-		TObjectPtr<UWorld> World = GetWorld();
-		if (World)
-		{
-			World->SpawnActor<AProjectileBase>(Projectile, StartLocation, ToHitTarget.Rotation(), SpawnParms);
-			//수류탄 스폰
-			switch (BojoMugiType)
-			{
-			case EBojoMugiType::E_Grenade:
-				if (inst)
-					inst->m_Socket->Send_BojoWeapon_packet(inst->GetPlayerID(), StartLocation, ToHitTarget.Rotation(), 0);
-				break;
-			case EBojoMugiType::E_Wall:
-				if (inst)
-					inst->m_Socket->Send_BojoWeapon_packet(inst->GetPlayerID(), StartLocation, ToHitTarget.Rotation(), 1);
-				break;
-			}
-
-		}
-	}
-}
 
 void ACharacterBase::ReciveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController, AActor* DamageCauser)
 {
@@ -415,7 +311,7 @@ void ACharacterBase::ReciveDamage(AActor* DamagedActor, float Damage, const UDam
 				}
 
 			}
-			else if (10 <= ObtainedEscapeToolNum) 
+			else if (10 <= ObtainedEscapeToolNum)
 			{
 				DamageInsigatorCh->SetEscapeToolNum(DamageInsigatorCh->ObtainedEscapeToolNum + 4);
 				ObtainedEscapeToolNum -= 4;
@@ -651,8 +547,6 @@ void ACharacterBase::Inter(const FInputActionValue& Value)
 	}
 	else if (!bCanObtainEscapeTool && OverlappingEscapeTool)
 	{
-		//UE_LOG(LogTemp, Log, TEXT("TEST"));
-		//EToolTranfrom(Value);
 		OverlappingEscapeTool->bOverlap = 1;
 	}
 
@@ -736,74 +630,42 @@ void ACharacterBase::Reroad(const FInputActionValue& Value)
 
 void ACharacterBase::GrandeFire_Aiming(const FInputActionValue& Value)
 {
-	if (WeaponManager->GetCurrentWeapon())
+	if (SubWeaponManager)
 	{
-		Aim->Activate();
-		FPredictProjectilePathParams Path;
-		Path.StartLocation = PathSorce->GetComponentLocation();
-		Path.LaunchVelocity = FollowCamera->GetForwardVector() * 1500.f;
-		Path.ProjectileRadius = 3.f;
-		Path.bTraceWithCollision = true;
-		Path.ActorsToIgnore.Add(this);
-		//Path.DrawDebugType = EDrawDebugTrace::ForOneFrame;
-		FPredictProjectilePathResult Result;
-		UGameplayStatics::PredictProjectilePath(Grenade, Path, Result);
-		TArray<FVector> Locations;
-		for (auto OnePathData : Result.PathData)
-		{
-			Locations.Add(OnePathData.Location);
-		}
-		SWAimLastLoc = Locations.Last();
-		UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayPosition(Aim, FName("PositionArray"), Locations);
+		SubWeaponManager->PredictPath(this);
 	}
 }
 
 void ACharacterBase::GrandeFire(const FInputActionValue& Value)
 {
-	if (WeaponManager->GetCurrentWeapon())
+	if (SubWeaponManager)
 	{
-		Aim->Deactivate();
-
-		if (BojoMugiType == EBojoMugiType::E_BoobyTrap)
-		{
-			TObjectPtr<UWorld> World = GetWorld();
-			if (World && BoobyTrapNum > 0)
-			{
-				FActorSpawnParameters SpawnParms;
-				SpawnParms.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-				SpawnParms.Owner = this;
-				SpawnParms.Instigator = this;
-
-				World->SpawnActor<AProjectileBase>(BoobyTrapClass, SWAimLastLoc, FRotator::ZeroRotator, SpawnParms);
-				BoobyTrapNum -= 1;
-				if (inst)
-					inst->m_Socket->Send_BojoWeapon_packet(inst->GetPlayerID(), SWAimLastLoc, FRotator::ZeroRotator, 2);
-			}
-		}
-		else
-		{
-			GrandeAim();
-		}
+		SubWeaponManager->StartThrow(this);
 	}
 }
 
 void ACharacterBase::SelectGrande(const FInputActionValue& Value)
 {
-	BojoMugiType = EBojoMugiType::E_Grenade;
-
-	MainController->SetHUDBojoImage(BojoMugiType);
+	if (SubWeaponManager)
+	{
+		SubWeaponManager->SelectSubWeapon(EBojoMugiType::E_Grenade);
+	}
 }
 
 void ACharacterBase::SelectWall(const FInputActionValue& Value)
 {
-	BojoMugiType = EBojoMugiType::E_Wall;
-	MainController->SetHUDBojoImage(BojoMugiType);
+	if (SubWeaponManager)
+	{
+		SubWeaponManager->SelectSubWeapon(EBojoMugiType::E_Wall);
+	}
 }
 
 void ACharacterBase::SelectTrap(const FInputActionValue& Value)
 {
-	BojoMugiType = EBojoMugiType::E_BoobyTrap;
-	MainController->SetHUDBojoImage(BojoMugiType);
+	if (SubWeaponManager)
+	{
+		SubWeaponManager->SelectSubWeapon(EBojoMugiType::E_BoobyTrap);
+	}
 }
 
 void ACharacterBase::StartJump(const FInputActionValue& Value)

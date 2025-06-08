@@ -15,6 +15,7 @@ public:
 	AProjectileBase();
 
 	virtual void Tick(float DeltaTime) override;
+	void InitVelocity(const FVector& Velocity);
 
 protected:
 	virtual void BeginPlay() override;

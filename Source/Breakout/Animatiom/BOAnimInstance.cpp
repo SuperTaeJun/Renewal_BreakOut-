@@ -7,6 +7,7 @@
 #include "Weapon/WeaponBase.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "UWeaponManagerComponent.h"
+#include "Components/SubWeaponManagerComponent.h"
 
 void UBOAnimInstance::NativeInitializeAnimation()
 {
@@ -14,6 +15,8 @@ void UBOAnimInstance::NativeInitializeAnimation()
 	if (BaseCharacter)
 	{
 		Movement = BaseCharacter->GetCharacterMovement();
+		// ¢º SubWeaponManagerComponent ÃÊ±âÈ­
+		SubWeaponManager = BaseCharacter->FindComponentByClass<USubWeaponManagerComponent>();
 
 		bUseLeftHand = true;
 	}

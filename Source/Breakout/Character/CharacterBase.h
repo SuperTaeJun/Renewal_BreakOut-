@@ -38,6 +38,10 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = Components)
 	TObjectPtr<class UUWeaponManagerComponent> WeaponManager;
+
+	UPROPERTY(VisibleAnywhere, Category = Components)
+	TObjectPtr<class USubWeaponManagerComponent> SubWeaponManager;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
@@ -66,12 +70,8 @@ protected:
 	bool StaminaExhaustionState;
 	bool bAlive = true;
 
-	int32 GrendeNum;
-	int32 WallGrendeNum;
-	int32 BoobyTrapNum;
-
 	ECharacterState CharacterState;
-	EBojoMugiType BojoMugiType;
+	//EBojoMugiType BojoMugiType;
 	int32 ObtainedEscapeToolNum;
 
 	FVector SWAimLastLoc;
@@ -141,26 +141,12 @@ public:
 	UFUNCTION()
 	void ReciveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController, AActor* DamageCauser);
 
-	void GrandeThrow();
-	void GrandeAim();
-
-	UFUNCTION(BlueprintCallable)
-	void GrandeThrowFinish();
-
-	UFUNCTION(BlueprintCallable)
-	void SpawnGrenade();
-
 	UFUNCTION(BlueprintCallable)
 	void ReloadForMontage();
-
-	void SetSpawnGrenade(TSubclassOf<class AProjectileBase> Projectile);
-
 	void Dead();
 	FTimerHandle DeadTimer;
 
 protected:
-	UPROPERTY(EditAnywhere, Category = Animation)
-	TObjectPtr<class UAnimMontage> GrenadeMontage;
 	UPROPERTY(EditAnywhere, Category = Animation)
 	TObjectPtr<class UAnimMontage> DeadMontage;
 	UPROPERTY(EditAnywhere, Category = Animation)
@@ -173,12 +159,6 @@ protected:
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<class UStaticMeshComponent> Grenade;
 
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<class AProjectileBase> GrenadeClass;
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<class AProjectileBase> WallClass;
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<class AProjectileBase> BoobyTrapClass;
 
 	//idle turn
 	ETurningInPlace TurningType;
@@ -219,9 +199,6 @@ protected:
 
 	void SetSprint();
 	void SetRun();
-
-
-	//ÀÔ·Â°ª
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	TObjectPtr<class UInputMappingContext> DefalutMappingContext;
@@ -317,13 +294,13 @@ enum class ECharacterState : uint8
 	ECS_DEFAULT UMETA(DisplayName = "Default")
 };
 
-UENUM(BlueprintType)
-enum class EBojoMugiType : uint8
-{
-	E_Grenade UMETA(DisplayName = "Grenade"),
-	E_Wall UMETA(DisplayName = "Wall"),
-	E_BoobyTrap UMETA(DisplayName = "BoobyTrap"),
-
-	ECS_DEFAULT UMETA(DisplayName = "Default")
-};
+//UENUM(BlueprintType)
+//enum class EBojoMugiType : uint8
+//{
+//	E_Grenade UMETA(DisplayName = "Grenade"),
+//	E_Wall UMETA(DisplayName = "Wall"),
+//	E_BoobyTrap UMETA(DisplayName = "BoobyTrap"),
+//
+//	ECS_DEFAULT UMETA(DisplayName = "Default")
+//};
 
