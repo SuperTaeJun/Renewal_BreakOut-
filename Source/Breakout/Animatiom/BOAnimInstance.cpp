@@ -6,6 +6,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Weapon/WeaponBase.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "UWeaponManagerComponent.h"
+
 void UBOAnimInstance::NativeInitializeAnimation()
 {
 	BaseCharacter = Cast<ACharacterBase>(GetOwningActor());
@@ -27,7 +29,7 @@ void UBOAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		bIsFalling = Movement->IsFalling();
 		bIsAccelerating = BaseCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f ? true : false;
 		TurningType = BaseCharacter->GetTurningType();
-		EquipWeapon = BaseCharacter->GetWeapon();
+		EquipWeapon = BaseCharacter->GetWeaponManager()->GetCurrentWeapon();
 
 		//Yaw오프셋 값
 		FRotator AimRotation = BaseCharacter->GetBaseAimRotation();
@@ -65,11 +67,11 @@ void UBOAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 		}
 
-		if (BaseCharacter->GetCurWeapon())
+		if (BaseCharacter->GetWeaponManager()->GetCurrentWeapon())
 		{
 			bCurWeapon = true;
 		}
-		else if (!BaseCharacter->GetCurWeapon())
+		else if (!BaseCharacter->GetWeaponManager()->GetCurrentWeapon())
 		{
 			bCurWeapon = false;
 		}

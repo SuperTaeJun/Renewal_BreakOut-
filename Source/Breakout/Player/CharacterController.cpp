@@ -39,6 +39,10 @@
 #include "LevelSequencePlayer.h"
 #include "FX/Skill4StartActor.h"
 
+
+//새로 추가중
+#include "UWeaponManagerComponent.h"
+
 ACharacterController::ACharacterController()
 {
 	//c_socket = ClientSocket::GetSingleton();
@@ -591,14 +595,14 @@ bool ACharacterController::UpdateWorld()
 				info->bBulletWall = false;
 			}
 			//------------------------
-			if (!OtherPlayer->GetCurWeapon() && info->bselectweapon)
+			if (!OtherPlayer->GetWeaponManager()->GetCurrentWeapon() && info->bselectweapon)
 			{
 
 				UE_LOG(LogTemp, Warning, TEXT("WEAPON : %d"), info->w_type);
 				if (info->w_type == WeaponType::RIFLE)
 				{
 					FName RifleSocketName = FName("RifleSocket");
-					OtherPlayer->SetWeapon(Rifle, RifleSocketName);
+					OtherPlayer->GetWeaponManager()->EquipWeapon(Rifle, RifleSocketName);
 					//UE_LOG(LogTemp, Warning, TEXT("RifleSocket"));
 
 				}
@@ -606,19 +610,19 @@ bool ACharacterController::UpdateWorld()
 				{
 					UE_LOG(LogTemp, Warning, TEXT("SHOTGUN"));
 					FName ShotgunSocketName = FName("ShotgunSocket");
-					OtherPlayer->SetWeapon(ShotGun, ShotgunSocketName);
+					OtherPlayer->GetWeaponManager()->EquipWeapon(ShotGun, ShotgunSocketName);
 
 				}
 				else if (info->w_type == WeaponType::LAUNCHER)
 				{
 					FName LancherSocketName = FName("LancherSocket");
-					OtherPlayer->SetWeapon(Lancher, LancherSocketName);
+					OtherPlayer->GetWeaponManager()->EquipWeapon(Lancher, LancherSocketName);
 
 				}
 				else
 				{
 					FName LancherSocketName = FName("LancherSocket");
-					OtherPlayer->SetWeapon(Lancher, LancherSocketName);
+					OtherPlayer->GetWeaponManager()->EquipWeapon(Lancher, LancherSocketName);
 
 				}
 				info->bselectweapon = false;
@@ -629,13 +633,13 @@ bool ACharacterController::UpdateWorld()
 
 			if (info->bGetWeapon == true)
 			{
-				OtherPlayer->CurWeapon->Destroy();
-				OtherPlayer->CurWeapon = nullptr;
+				OtherPlayer->GetWeaponManager()->GetCurrentWeapon()->Destroy();
+				OtherPlayer->GetWeaponManager()->SetCurrentWeapon(nullptr);
 				info->bGetWeapon = false;
 			}
 
 			//히팅
-			if (OtherPlayer->GetCurWeapon() && info->hiteffect == true)
+			if (OtherPlayer->GetWeaponManager()->GetCurrentWeapon() && info->hiteffect == true)
 			{
 				FActorSpawnParameters SpawnParameters;
 				SpawnParameters.Owner = OtherPlayer;
@@ -708,7 +712,7 @@ bool ACharacterController::UpdateWorld()
 			Rshotgun4.Yaw = info->sEshot4.Yaw;
 			Rshotgun4.Roll = info->sEshot4.Roll;
 			//----------------------------------------
-			if (OtherPlayer->GetCurWeapon() && info->sfired == true)
+			if (OtherPlayer->GetWeaponManager()->GetCurrentWeapon() && info->sfired == true)
 			{
 				FActorSpawnParameters SpawnParameters;
 				SpawnParameters.Owner = OtherPlayer;
@@ -727,7 +731,7 @@ bool ACharacterController::UpdateWorld()
 				if (Cast<ACharacter1>(OtherPlayer)) {
 					ACharacter1* Niagaraplayer = Cast<ACharacter1>(OtherPlayer);
 					Niagaraplayer->GetMesh()->SetVisibility(false);
-					Niagaraplayer->GetCurWeapon()->GetWeaponMesh()->SetVisibility(false);
+					Niagaraplayer->GetWeaponManager()->GetCurrentWeapon()->GetWeaponMesh()->SetVisibility(false);
 					ch1skill.X = info->CH1NiaLoc.X;
 					ch1skill.Y = info->CH1NiaLoc.Y;
 					ch1skill.Z = info->CH1NiaLoc.Z;
@@ -741,7 +745,7 @@ bool ACharacterController::UpdateWorld()
 				if (Cast<ACharacter1>(OtherPlayer)) {
 					ACharacter1* Niagaraplayer = Cast<ACharacter1>(OtherPlayer);
 					Niagaraplayer->GetMesh()->SetVisibility(true);
-					Niagaraplayer->GetCurWeapon()->GetWeaponMesh()->SetVisibility(true);
+					Niagaraplayer->GetWeaponManager()->GetCurrentWeapon()->GetWeaponMesh()->SetVisibility(true);
 
 					info->skilltype = -1;
 				}
@@ -758,7 +762,7 @@ bool ACharacterController::UpdateWorld()
 			{
 				ACharacter2* Niagaraplayer = Cast<ACharacter2>(OtherPlayer);
 				Niagaraplayer->GetMesh()->SetVisibility(true);
-				Niagaraplayer->GetCurWeapon()->GetWeaponMesh()->SetVisibility(true);
+				Niagaraplayer->GetWeaponManager()->GetCurrentWeapon()->GetWeaponMesh()->SetVisibility(true);
 				info->bFinishSkill = false;
 			}
 			else if (info->p_type == PlayerType::Character3 && info->skilltype == 0)
@@ -797,7 +801,7 @@ bool ACharacterController::UpdateWorld()
 					ACharacter4* Niagaraplayer = Cast<ACharacter4>(OtherPlayer);
 					UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, Niagaraplayer->GetImpactNiagara(), Niagaraplayer->GetActorLocation());
 					Niagaraplayer->GetMesh()->SetVisibility(false, false);
-					Niagaraplayer->GetCurWeapon()->GetWeaponMesh()->SetVisibility(false);
+					Niagaraplayer->GetWeaponManager()->GetCurrentWeapon()->GetWeaponMesh()->SetVisibility(false);
 					info->skilltype = -1;
 					//Cast<ASkill4Actor>(ServerTemp)->bTimerStart = true;
 				}
@@ -805,7 +809,7 @@ bool ACharacterController::UpdateWorld()
 			if (info->p_type == PlayerType::Character4 && info->skilltype == 2) {
 				ACharacter4* Niagaraplayer = Cast<ACharacter4>(OtherPlayer);
 				Niagaraplayer->GetMesh()->SetVisibility(true, false);
-				Niagaraplayer->GetCurWeapon()->GetWeaponMesh()->SetVisibility(true);
+				Niagaraplayer->GetWeaponManager()->GetCurrentWeapon()->GetWeaponMesh()->SetVisibility(true);
 				info->bch4end = false;
 				bool Test = Niagaraplayer->GetMesh()->IsVisible();
 				UE_LOG(LogTemp, Warning, TEXT("hahah : %d"), Test);
@@ -850,14 +854,14 @@ bool ACharacterController::UpdateWorld()
 				OtherPlayer->StopAnimMontage(SyncInterMontage);
 				info->itemAnimtype = -1;
 			}
-			if (OtherPlayer->GetCurWeapon()) {
+			if (OtherPlayer->GetWeaponManager()->GetCurrentWeapon()) {
 				if (info->bLightOn == true)
 				{
-					OtherPlayer->CurWeapon->GetSpotLight()->SetVisibility(true);
+					OtherPlayer->GetWeaponManager()->GetCurrentWeapon()->GetSpotLight()->SetVisibility(true);
 				}
 				else if (info->bLightOn == false)
 				{
-					OtherPlayer->CurWeapon->GetSpotLight()->SetVisibility(false);
+					OtherPlayer->GetWeaponManager()->GetCurrentWeapon()->GetSpotLight()->SetVisibility(false);
 				}
 			}
 

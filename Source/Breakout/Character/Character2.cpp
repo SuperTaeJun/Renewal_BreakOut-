@@ -107,7 +107,7 @@ void ACharacter2::DashSetup(float _MaxWalk, float _MaxAcc, FRotator _Rotation, b
 	MovementComp->MaxWalkSpeed = _MaxWalk;
 	MovementComp->RotationRate = _Rotation;
 	GetMesh()->SetVisibility(_Visibillity);
-	CurWeapon->GetWeaponMesh()->SetVisibility(_Visibillity);
+	GetWeaponManager()->GetCurrentWeapon()->GetWeaponMesh()->SetVisibility(_Visibillity);
 	bCanJump = false;
 	NiagaraComp->Deactivate();
 	//DisableInput(UGameplayStatics::GetPlayerController(GetWorld(),0));
@@ -123,11 +123,11 @@ void ACharacter2::DashFinishSetup()
 	MovementComp->MaxWalkSpeed = OldMaxWalkSpeed;
 	MovementComp->RotationRate = OldRotationRate;
 	GetMesh()->SetVisibility(true);
-	CurWeapon->GetWeaponMesh()->SetVisibility(true);
+	GetWeaponManager()->GetCurrentWeapon()->GetWeaponMesh()->SetVisibility(true);
 	if (bCurLight)
-		CurWeapon->GetSpotLight()->SetVisibility(true);
+		GetWeaponManager()->GetCurrentWeapon()->GetSpotLight()->SetVisibility(true);
 	else
-		CurWeapon->GetSpotLight()->SetVisibility(false);
+		GetWeaponManager()->GetCurrentWeapon()->GetSpotLight()->SetVisibility(false);
 	bCanJump = true;
 	bSkillUsing = false;
 	//EnableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));
@@ -170,7 +170,7 @@ void ACharacter2::ServerNiagaraSync()
 		//DashStart();
 		//GetCamera()->bCameraMeshHiddenInGame = true;
 		GetMesh()->SetVisibility(false);
-		CurWeapon->GetWeaponMesh()->SetVisibility(false);
+		GetWeaponManager()->GetCurrentWeapon()->GetWeaponMesh()->SetVisibility(false);
 		//GetMesh()->SetVisibility(false);
 		//GetCurWeapon()->GetWeaponMesh()->SetVisibility(false);
 

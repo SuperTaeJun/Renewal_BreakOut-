@@ -10,6 +10,8 @@
 #include "MainHUD.h"
 #include "ClientSocket.h"
 #include "Network/PacketData.h"
+#include "UWeaponManagerComponent.h"
+
 void USelectWeaponUi::NativeConstruct()
 {
 	Super::NativeConstruct();
@@ -27,9 +29,7 @@ void USelectWeaponUi::RifleButtonPressed()
 	ACharacterBase* Character = Cast<ACharacterBase>(GetOwningPlayerPawn());
 	ACharacterController* Controller = Cast<ACharacterController>(Character->Controller);
 	AMainHUD* MainHUD = Cast<AMainHUD>(Controller->GetHUD());
-	/*WeaponType type = RIFLE;
-	int id = MyCharacterController->GetPlayerID();
-	c_socket->Send_Weapon_Type(type, id);*/
+
 	FInputModeGameOnly GameOnlyInput;
 	Controller->SetInputMode(GameOnlyInput);
 	MainHUD->RemoveSelectWeapon();
@@ -37,11 +37,13 @@ void USelectWeaponUi::RifleButtonPressed()
 	Controller->bEnableMouseOverEvents = false;
 
 	FName RifleSocketName = FName("RifleSocket");
-	Character->SetWeapon(Rifle, RifleSocketName);
+	Character->GetWeaponManager()->EquipWeapon(Rifle, RifleSocketName);
+	//Character->SetWeapon(Rifle, RifleSocketName);
 	Controller->SetHUDAmmo(30);
 
 	Character->EnableInput(MyCharacterController);
-	Character->SetWeaponType(EWeaponType::E_Rifle);
+	//Character->SetWeaponType(EWeaponType::E_Rifle);
+	Character->GetWeaponManager()->SetWeaponType(EWeaponType::E_Rifle);
 	MyCharacterController->Set_Weapon_Type(EWeaponType::E_Rifle);
 }
 
@@ -51,20 +53,19 @@ void USelectWeaponUi::ShotgunButtonPressed()
 	ACharacterBase* Character = Cast<ACharacterBase>(GetOwningPlayerPawn());
 	ACharacterController* Controller = Cast<ACharacterController>(Character->Controller);
 	AMainHUD* MainHUD = Cast<AMainHUD>(Controller->GetHUD());
-	//WeaponType type = SHOTGUN;
-	//int id = MyCharacterController->GetPlayerID();
-	//UE_LOG(LogClass, Warning, TEXT("MY ID : %d"), id);
-	//c_socket->Send_Weapon_Type(type, id);
+
 	FInputModeGameOnly GameOnlyInput;
 	Controller->SetInputMode(GameOnlyInput);
 	MainHUD->RemoveSelectWeapon();
 	Controller->bShowMouseCursor = false;
 	Controller->bEnableMouseOverEvents = false;
 	Character->EnableInput(MyCharacterController);
-	Character->SetWeaponType(EWeaponType::E_Shotgun);
+	//Character->SetWeaponType(EWeaponType::E_Shotgun);
+	Character->GetWeaponManager()->SetWeaponType(EWeaponType::E_Shotgun);
 	FName ShotguSocketName = FName("ShotgunSocket");
 
-	Character->SetWeapon(ShotGun, ShotguSocketName);
+	//Character->GetWeaponManager()->EquipWeapon(ShotGun, ShotguSocketName);
+	Character->GetWeaponManager()->EquipWeapon(ShotGun, ShotguSocketName);
 	Controller->SetHUDAmmo(5);
 
 	MyCharacterController->Set_Weapon_Type(EWeaponType::E_Shotgun);
@@ -76,19 +77,18 @@ void USelectWeaponUi::LancherButtonPressed()
 	ACharacterBase* Character = Cast<ACharacterBase>(GetOwningPlayerPawn());
 	ACharacterController* Controller = Cast<ACharacterController>(Character->Controller);
 	AMainHUD* MainHUD = Cast<AMainHUD>(Controller->GetHUD());
-	/*WeaponType type = LAUNCHER;
-	int id = MyCharacterController->GetPlayerID();
-	c_socket->Send_Weapon_Type(type, id);*/
+
 	FInputModeGameOnly GameOnlyInput;
 	Controller->SetInputMode(GameOnlyInput);
 	MainHUD->RemoveSelectWeapon();
 	Controller->bShowMouseCursor = false;
 	Controller->bEnableMouseOverEvents = false;
 	Character->EnableInput(MyCharacterController);
-	Character->SetWeaponType(EWeaponType::E_Launcher);
+	Character->GetWeaponManager()->SetWeaponType(EWeaponType::E_Launcher);
 	FName LancherSocketName = FName("LancherSocket");
 
-	Character->SetWeapon(Lancher, LancherSocketName);
+	//Character->GetWeaponManager()->EquipWeapon(Lancher, LancherSocketName);
+	Character->GetWeaponManager()->EquipWeapon(Lancher, LancherSocketName);
 	Controller->SetHUDAmmo(2);
 
 	MyCharacterController->Set_Weapon_Type(EWeaponType::E_Launcher);

@@ -110,9 +110,9 @@ void ACharacter4::SetLocation()
 	GetMesh()->SetVisibility(true, true);
 
 	if (bCurLight)
-		CurWeapon->GetSpotLight()->SetVisibility(true);
+		GetWeaponManager()->GetCurrentWeapon()->GetSpotLight()->SetVisibility(true);
 	else
-		CurWeapon->GetSpotLight()->SetVisibility(false);
+		GetWeaponManager()->GetCurrentWeapon()->GetSpotLight()->SetVisibility(false);
 
 	Temp->Destroy();
 	if (inst)

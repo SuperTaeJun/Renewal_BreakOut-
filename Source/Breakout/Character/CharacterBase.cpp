@@ -1,6 +1,5 @@
 #include "Character/CharacterBase.h"
 //입력
-#include "InputMappingContext.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Player/CharacterController.h"
@@ -17,7 +16,6 @@
 #include "HUD/MainHUD.h"
 #include "GameFramework/PlayerController.h"
 #include "Game/BOGameInstance.h"
-#include "ClientSocket.h"
 #include "Weapon/ProjectileBase.h"
 #include "Game/BOGameMode.h"
 #include "Components/CapsuleComponent.h"
@@ -34,7 +32,7 @@
 #include "LevelSequence.h"
 #include "LevelSequencePlayer.h"
 #include "Data/WeaponData.h"
-
+#include "UWeaponManagerComponent.h"
 ACharacterBase::ACharacterBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -75,6 +73,7 @@ ACharacterBase::ACharacterBase()
 	PathSorce->SetupAttachment(GetMesh(), FName("HeadSocket"));
 
 	Aim = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NiagaraAim"));
+	WeaponManager = CreateDefaultSubobject<UUWeaponManagerComponent>(TEXT("WeaponManager"));
 
 	//스테이트
 	MaxHealth = 100.f;
@@ -82,12 +81,11 @@ ACharacterBase::ACharacterBase()
 	MaxStamina = 100.f;
 	Stamina = MaxStamina;
 	StaminaExhaustionState = false;
-	bCanFire = true;
 	GrendeNum = 3;
 	WallGrendeNum = 3;
 	BoobyTrapNum = 3;
 	ObtainedEscapeToolNum = 0;
-	CurWeaponType = EWeaponType::ECS_DEFAULT;
+	//CurWeaponType = EWeaponType::ECS_DEFAULT;
 	bStarted = false;
 	StartedCnt = 5.f;
 	bCanEscape = false;
@@ -255,8 +253,8 @@ void ACharacterBase::SetResetState()
 	Stamina = 100.f;
 	UpdateHpHUD();
 	UpdateStaminaHUD();
-	CurWeapon->Destroy();
-	CurWeapon = nullptr;
+	WeaponManager->GetCurrentWeapon()->Destroy();
+	WeaponManager->SetCurrentWeapon(nullptr);
 	bDissolve = false;
 	DissolvePercent = -1.f;
 	GetMesh()->SetMaterial(0, MDynamicDissolveInst);
@@ -271,46 +269,9 @@ void ACharacterBase::SetResetState()
 		inst->m_Socket->Send_Remove_Weapon(inst->GetPlayerID(), true);
 
 }
-
-void ACharacterBase::SetWeapon(TSubclassOf<class AWeaponBase> Weapon, FName SocketName)
-{
-	if (!CurWeapon)
-	{
-		RightHandSocketName = SocketName;
-
-		FActorSpawnParameters SpawnParameters;
-		SpawnParameters.Owner = this;
-		SpawnParameters.Instigator = this;
-		AActor* SpawnWeapon = GetWorld()->SpawnActor<AWeaponBase>(Weapon, SpawnParameters);
-		CurWeapon = Cast<AWeaponBase>(SpawnWeapon);
-
-		//UE_LOG(LogTemp, Warning, TEXT("SPAWN WEAPON"));
-
-		const USkeletalMeshSocket* WeaponSocket = GetMesh()->GetSocketByName(SocketName);
-
-
-		if (WeaponSocket && CurWeapon)
-		{
-			WeaponSocket->AttachActor(CurWeapon, GetMesh());
-			CurWeapon->SetOwner(this);
-		}
-
-		SetRun();
-	}
-
-}
-
 void ACharacterBase::SetbCanObtainEscapeTool(bool _bCanObtain)
 {
 	bCanObtainEscapeTool = _bCanObtain;
-}
-
-
-void ACharacterBase::PlayFireActionMontage()
-{
-	if (FireActionMontage)
-		PlayAnimMontage(FireActionMontage, 1.5f);
-
 }
 
 void ACharacterBase::GrandeThrow()
@@ -320,7 +281,7 @@ void ACharacterBase::GrandeThrow()
 }
 void ACharacterBase::GrandeAim()
 {
-	CurWeapon->SetActorHiddenInGame(true);
+	WeaponManager->GetCurrentWeapon()->SetActorHiddenInGame(true);
 	Grenade->bHiddenInGame = false;
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
@@ -331,22 +292,23 @@ void ACharacterBase::GrandeAim()
 			inst->m_Socket->Send_BojoAnim_packet(inst->GetPlayerID(), 0);
 		PlayAnimMontage(GrenadeMontage, 1.5f);
 		//bUsingThrowMontage = true;
-		bCanFire = false;
+		//bCanFire = false;
+		WeaponManager->bCanFire = false;
 	}
 }
 void ACharacterBase::GrandeThrowFinish()
 {
-
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	Cast<UBOAnimInstance>(AnimInstance)->bUseLeftHand = true;
 	const USkeletalMeshSocket* WeaponSocket = GetMesh()->GetSocketByName(RightHandSocketName);
 
-	CurWeapon->SetActorHiddenInGame(false);
+	WeaponManager->GetCurrentWeapon()->SetActorHiddenInGame(false);
 	//bUsingThrowMontage = false;
-	bCanFire = true;
-	if (WeaponSocket && CurWeapon)
+	//bCanFire = true;
+	WeaponManager->bCanFire = true;
+	if (WeaponSocket && WeaponManager->GetCurrentWeapon())
 	{
-		WeaponSocket->AttachActor(CurWeapon, GetMesh());
+		WeaponSocket->AttachActor(WeaponManager->GetCurrentWeapon(), GetMesh());
 	}
 
 	//Grenade->bHiddenInGame = false;
@@ -386,9 +348,10 @@ void ACharacterBase::SpawnGrenade()
 
 void ACharacterBase::ReloadForMontage()
 {
-	CurWeapon->Reload();
-	MainController->SetHUDAmmo(CurWeapon->GetCurAmmo());
-	bCanFire = true;
+	if (WeaponManager)
+	{
+		WeaponManager->FinishReload();
+	}
 }
 
 void ACharacterBase::SetSpawnGrenade(TSubclassOf<AProjectileBase> Projectile)
@@ -486,7 +449,7 @@ void ACharacterBase::ReciveDamage(AActor* DamagedActor, float Damage, const UDam
 
 void ACharacterBase::Dead()
 {
-	bCanFire = true;
+	WeaponManager->bCanFire = false;
 	SetRespawnUi();
 
 }
@@ -553,56 +516,6 @@ void ACharacterBase::AimOffset(float DeltaTime)
 	}
 }
 
-void ACharacterBase::StartFireTimer()
-{
-	GetWorldTimerManager().SetTimer(FireTimer, this, &ACharacterBase::FireTimerFinished, CurWeapon->GetWeaponData().FireRate);
-}
-
-void ACharacterBase::FireTimerFinished()
-{
-	bCanFire = true;
-	if (bFirePressed)
-		Fire();
-}
-
-void ACharacterBase::Fire()
-{
-	if (CurWeapon->GetCurAmmo() <= 0)
-		bCanFire = false;
-
-	if (bCanFire == true)
-	{
-		bCanFire = false;
-		if (CurWeapon)
-		{
-			CurWeapon->Fire(HitTarget);
-		}
-		PlayFireActionMontage();
-
-		UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->StartCameraShake(UShoot::StaticClass());
-
-		//총기 반동 배그
-		if (CurWeaponType == EWeaponType::E_Rifle)
-			AddControllerPitchInput(-0.7);
-		else if (CurWeaponType == EWeaponType::E_Shotgun)
-			AddControllerPitchInput(-3.f);
-		else
-			AddControllerPitchInput(-6.f);
-
-		MainController->SetHUDAmmo(CurWeapon->GetCurAmmo());
-
-		StartFireTimer();
-	}
-}
-
-void ACharacterBase::FirePressd(bool _Pressd)
-{
-	if (_Pressd && CharacterState != ECharacterState::ECS_SPRINT && CurWeapon)
-	{
-		Fire();
-	}
-}
-
 void ACharacterBase::TraceUnderCrossHiar(FHitResult& TraceHitResult)
 {
 	FVector2D ViewportSize;
@@ -633,9 +546,9 @@ void ACharacterBase::TraceUnderCrossHiar(FHitResult& TraceHitResult)
 			Start += CrossHairDirection * (DistanceToCharacter + 100.f);
 		}
 
-		if (CurWeapon)
+		if (WeaponManager->GetCurrentWeapon())
 		{
-			FVector End = Start + CrossHairDirection * CurWeapon->GetWeaponData().Range;
+			FVector End = Start + CrossHairDirection * WeaponManager->GetCurrentWeapon()->GetWeaponData().Range;
 
 			GetWorld()->LineTraceSingleByChannel(
 				TraceHitResult,
@@ -665,9 +578,7 @@ void ACharacterBase::SetRun()
 	Movement->bOrientRotationToMovement = false;
 	bUseControllerRotationYaw = true;
 }
-enum Move {
-	Move_Player
-};
+
 void ACharacterBase::Move(const FInputActionValue& Value)
 {
 	const FVector2D MovementVector = Value.Get<FVector2D>();
@@ -680,7 +591,6 @@ void ACharacterBase::Move(const FInputActionValue& Value)
 	const FVector RightDir = FRotationMatrix(YawRotaion).GetUnitAxis(EAxis::Y);
 	AddMovementInput(RightDir, MovementVector.X);
 }
-
 void ACharacterBase::Look(const FInputActionValue& Value)
 {
 	const FVector2D LookAxis = Value.Get<FVector2D>();
@@ -694,7 +604,7 @@ void ACharacterBase::Look(const FInputActionValue& Value)
 
 void ACharacterBase::Sprint_S(const FInputActionValue& Value)
 {
-	if (!StaminaExhaustionState && CurWeapon)
+	if (!StaminaExhaustionState && WeaponManager->GetCurrentWeapon())
 	{
 		CharacterState = ECharacterState::ECS_SPRINT;
 
@@ -717,26 +627,11 @@ void ACharacterBase::Sprint_E(const FInputActionValue& Value)
 }
 void ACharacterBase::Fire_S(const FInputActionValue& Value)
 {
-	if (CurWeapon)
-	{
-		//CurWeapon->SetActorHiddenInGame(false);
-		if (CurWeapon->GetCurAmmo() <= 0)
-		{
-			bFirePressed = false;
-		}
-		else if (CurWeapon->GetCurAmmo() >= 1)
-		{
-			bFirePressed = true;
-		}
-		FirePressd(bFirePressed);
-
-	}
-
+	if (WeaponManager) WeaponManager->HandleFirePressed();
 }
 void ACharacterBase::Fire_E(const FInputActionValue& Value)
 {
-	bFirePressed = false;
-	FirePressd(bFirePressed);
+	if (WeaponManager) WeaponManager->HandleFireReleased();
 }
 void ACharacterBase::Inter(const FInputActionValue& Value)
 {
@@ -794,11 +689,6 @@ void ACharacterBase::Inter(const FInputActionValue& Value)
 				inst->m_Socket->Tempname.pop();
 			}
 		}
-
-
-		/*	if (inst)
-				Cast<UBOGameInstance>(GetGameInstance())->m_Socket->Send_End_Game_packet(inst->GetPlayerID());*/
-				//GetWorld()->ServerTravel(FString("/Game/Maps/GameRoom"), false,true);
 	}
 }
 void ACharacterBase::Inter_Start(const FInputActionValue& Value)
@@ -834,33 +724,19 @@ void ACharacterBase::Inter_End(const FInputActionValue& Value)
 }
 void ACharacterBase::EToolTranfrom(const FInputActionValue& Value)
 {
-	//if (OverlappingEscapeTool)
-	//{
 	OverlappingEscapeTool->TransformMesh(GetWorld()->GetDeltaSeconds(), false, false);
-	//}
-
 }
 void ACharacterBase::Reroad(const FInputActionValue& Value)
 {
-	if (CurWeapon)
+	if (WeaponManager)
 	{
-		if (ReloadMontage)
-		{
-			PlayAnimMontage(ReloadMontage);
-			if (inst)
-				inst->m_Socket->Send_Reload_packet(inst->GetPlayerID(), true);
-			bCanFire = false;
-		}
-		if (CurWeapon->GetReloadSound())
-		{
-			UGameplayStatics::PlaySoundAtLocation(this, CurWeapon->GetReloadSound(), GetActorLocation());
-		}
+		WeaponManager->ReloadWeaponWithAnimation();
 	}
 }
 
 void ACharacterBase::GrandeFire_Aiming(const FInputActionValue& Value)
 {
-	if (CurWeapon)
+	if (WeaponManager->GetCurrentWeapon())
 	{
 		Aim->Activate();
 		FPredictProjectilePathParams Path;
@@ -884,7 +760,7 @@ void ACharacterBase::GrandeFire_Aiming(const FInputActionValue& Value)
 
 void ACharacterBase::GrandeFire(const FInputActionValue& Value)
 {
-	if (CurWeapon)
+	if (WeaponManager->GetCurrentWeapon())
 	{
 		Aim->Deactivate();
 
@@ -900,16 +776,12 @@ void ACharacterBase::GrandeFire(const FInputActionValue& Value)
 
 				World->SpawnActor<AProjectileBase>(BoobyTrapClass, SWAimLastLoc, FRotator::ZeroRotator, SpawnParms);
 				BoobyTrapNum -= 1;
-				//여기 부비트랩
 				if (inst)
 					inst->m_Socket->Send_BojoWeapon_packet(inst->GetPlayerID(), SWAimLastLoc, FRotator::ZeroRotator, 2);
 			}
 		}
 		else
 		{
-			//UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-			//Cast<UBOAnimInstance>(AnimInstance)->bUseLeftHand = false;
-
 			GrandeAim();
 		}
 	}
@@ -936,7 +808,7 @@ void ACharacterBase::SelectTrap(const FInputActionValue& Value)
 
 void ACharacterBase::StartJump(const FInputActionValue& Value)
 {
-	if (bCanJump && CurWeapon)
+	if (bCanJump && WeaponManager->GetCurrentWeapon())
 		Super::Jump();
 
 	bCanJump = false;
@@ -950,30 +822,30 @@ void ACharacterBase::StopJump(const FInputActionValue& Value)
 
 void ACharacterBase::Detect_E(const FInputActionValue& Value)
 {
-	if (CurWeapon)
+	if (WeaponManager->GetCurrentWeapon())
 	{
-		CurWeapon->SetDetectNiagara(false);
+		WeaponManager->GetCurrentWeapon()->SetDetectNiagara(false);
 	}
 }
 
 void ACharacterBase::LightOnOff(const FInputActionValue& Value)
 {
-	if (CurWeapon && CurWeapon->GetSpotLight())
+	if (WeaponManager->GetCurrentWeapon() && WeaponManager->GetCurrentWeapon()->GetSpotLight())
 	{
 		UE_LOG(LogTemp, Log, TEXT("ONOFF"));
 
-		if (CurWeapon->GetSpotLight()->IsVisible())
+		if (WeaponManager->GetCurrentWeapon()->GetSpotLight()->IsVisible())
 		{	//라이트 패킷 ID랑,false보내기 그 후 컨트롤러에서 밑에줄 실행
 			if (inst)
 				inst->m_Socket->Send_Light_On_packet(inst->GetPlayerID(), false);
-			CurWeapon->GetSpotLight()->SetVisibility(false);
+			WeaponManager->GetCurrentWeapon()->GetSpotLight()->SetVisibility(false);
 			bCurLight = false;
 		}
 		else
 		{			//라이트 패킷 ID,랑true보내기 그 후 컨트롤러에서 밑에줄 실행
 			if (inst)
 				inst->m_Socket->Send_Light_On_packet(inst->GetPlayerID(), true);
-			CurWeapon->GetSpotLight()->SetVisibility(true);
+			WeaponManager->GetCurrentWeapon()->GetSpotLight()->SetVisibility(true);
 			bCurLight = true;
 		}
 	}
@@ -991,13 +863,13 @@ void ACharacterBase::Quit(const FInputActionValue& Value)
 
 void ACharacterBase::OnDebug(const FInputActionValue& Value)
 {
-	if (CurWeapon)
+	if (WeaponManager->GetCurrentWeapon())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("DEBUG"));
-		if (CurWeapon->bDebug)
-			CurWeapon->bDebug = false;
+		if (WeaponManager->GetCurrentWeapon()->bDebug)
+			WeaponManager->GetCurrentWeapon()->bDebug = false;
 		else
-			CurWeapon->bDebug = true;
+			WeaponManager->GetCurrentWeapon()->bDebug = true;
 	}
 
 	SetEscapeToolNum(2);
@@ -1005,10 +877,10 @@ void ACharacterBase::OnDebug(const FInputActionValue& Value)
 
 void ACharacterBase::Detect_S(const FInputActionValue& Value)
 {
-	if (CurWeapon)
+	if (WeaponManager->GetCurrentWeapon())
 	{
-		CurWeapon->DetectTool(HitTarget);
-		CurWeapon->SetDetectNiagara(true);
+		WeaponManager->GetCurrentWeapon()->DetectTool(HitTarget);
+		WeaponManager->GetCurrentWeapon()->SetDetectNiagara(true);
 	}
 }
 
@@ -1122,27 +994,6 @@ void ACharacterBase::SendEnd()
 	GetWorld()->ServerTravel(FString("/Game/Maps/GameRoom"), false, true);
 }
 
-void ACharacterBase::SpawnBeam(FVector StartBeam, FVector EndBeam)
-{
-
-	//UE_LOG(LogClass, Warning, TEXT("SB %f, EB : %f"), StartBeam.X, EndBeam.X);
-	//UNiagaraComponent* Beam = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), CurWeapon->BeamNiagara, StartBeam);
-	//if (Beam)
-	//{
-	//	Beam->SetVectorParameter(FName("End"), EndBeam);
-	//}
-}
-
-//void ACharacterBase::SpawnHitImpact(FVector HitLoc, FRotator HitRot)
-//{
-//	UNiagaraFunctionLibrary::SpawnSystemAtLocation
-//	(
-//		GetWorld(),
-//		CurWeapon->ImpactNiagara,
-//		HitLoc,
-//		HitRot
-//	);
-//}
 
 void ACharacterBase::StartGame()
 {

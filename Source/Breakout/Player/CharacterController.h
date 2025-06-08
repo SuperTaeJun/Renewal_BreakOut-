@@ -10,6 +10,7 @@
 #include "GameFramework/PlayerController.h"
 #include <memory>
 #include "Character/CharacterBase.h"
+#include "UWeaponManagerComponent.h"
 #include "CharacterController.generated.h"
 
 //ClientSocket* c_socket = nullptr;

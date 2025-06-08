@@ -94,7 +94,7 @@ void ACharacter3::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 void ACharacter3::Skill_S(const FInputActionValue& Value)
 {
-	if (CurWeapon)
+	if (GetWeaponManager()->GetCurrentWeapon())
 		GhostStart();
 	////패킷 
 	//if (inst)
@@ -103,7 +103,7 @@ void ACharacter3::Skill_S(const FInputActionValue& Value)
 
 void ACharacter3::Skill_E(const FInputActionValue& Value)
 {
-	if (CurWeapon)
+	if (GetWeaponManager()->GetCurrentWeapon())
 	{
 		GhostEnd();
 		//패킷
@@ -123,7 +123,7 @@ void ACharacter3::GhostStart()
 		NiagaraComp->Activate();
 
 		GetMesh()->SetVisibility(false);
-		CurWeapon->GetWeaponMesh()->SetVisibility(false);
+		GetWeaponManager()->GetCurrentWeapon()->GetWeaponMesh()->SetVisibility(false);
 
 		//MovementComp->MaxWalkSpeed = 1500;
 		//MovementComp->MaxAcceleration = 10000000.f;
@@ -149,12 +149,12 @@ void ACharacter3::GhostEnd()
 
 		NiagaraComp->Deactivate();
 		GetMesh()->SetVisibility(true, true);
-		CurWeapon->GetWeaponMesh()->SetVisibility(true);
+		GetWeaponManager()->GetCurrentWeapon()->GetWeaponMesh()->SetVisibility(true);
 
 		if (bCurLight)
-			CurWeapon->GetSpotLight()->SetVisibility(true);
+			GetWeaponManager()->GetCurrentWeapon()->GetSpotLight()->SetVisibility(true);
 		else
-			CurWeapon->GetSpotLight()->SetVisibility(false);
+			GetWeaponManager()->GetCurrentWeapon()->GetSpotLight()->SetVisibility(false);
 
 		//MovementComp->MaxWalkSpeed = OldMaxWalkSpeed;
 		//MovementComp->MaxAcceleration = OldMaxAcceleration;
@@ -169,7 +169,7 @@ void ACharacter3::ServerGhostStart()
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Ignore);
 	NiagaraComp->Activate();
 	GetMesh()->SetVisibility(false);
-	CurWeapon->GetWeaponMesh()->SetVisibility(false);
+	GetWeaponManager()->GetCurrentWeapon()->GetWeaponMesh()->SetVisibility(false);
 
 	//MovementComp->MaxWalkSpeed = 1500;
 	//MovementComp->MaxAcceleration = 10000000.f;
@@ -183,12 +183,12 @@ void ACharacter3::ServerGhostEnd()
 
 	NiagaraComp->Deactivate();
 	GetMesh()->SetVisibility(true, true);
-	CurWeapon->GetWeaponMesh()->SetVisibility(true);
+	GetWeaponManager()->GetCurrentWeapon()->GetWeaponMesh()->SetVisibility(true);
 
 	if (bCurLight)
-		CurWeapon->GetSpotLight()->SetVisibility(true);
+		GetWeaponManager()->GetCurrentWeapon()->GetSpotLight()->SetVisibility(true);
 	else
-		CurWeapon->GetSpotLight()->SetVisibility(false);
+		GetWeaponManager()->GetCurrentWeapon()->GetSpotLight()->SetVisibility(false);
 
 
 	//MovementComp->MaxWalkSpeed = OldMaxWalkSpeed;

@@ -36,12 +36,12 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UCharacterMovementComponent> Movement;
 
-
+	UPROPERTY(VisibleAnywhere, Category = Components)
+	TObjectPtr<class UUWeaponManagerComponent> WeaponManager;
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	EWeaponType CurWeaponType;
 
 	void UpdateCameraBoom(float DeltaTime);
 	void UpdateStamina(float DeltaTime);
@@ -93,6 +93,10 @@ protected:
 	//
 
 public:
+	UUWeaponManagerComponent* GetWeaponManager() {return WeaponManager;}
+	ECharacterState GetCharacterState() { return CharacterState; }
+
+public:
 	void UpdateHpHUD();
 	void UpdateStaminaHUD();
 	void UpdateObtainedEscapeTool();
@@ -100,10 +104,8 @@ public:
 	void SetAO_YAW(float Servao_yaw) { AO_Yaw = Servao_yaw; }
 	void SetAO_PITCH(float Servao_pitch) { AO_Pitch = Servao_pitch; }
 	void SetResetState();
-	void SetWeaponType(EWeaponType Type) { CurWeaponType = Type; }
 	void SetbCanEscape(bool _bCanEscape) { bCanEscape = _bCanEscape; }
 	void SetEscapeToolNum(int32 Num) { ObtainedEscapeToolNum = Num; }
-	void SetWeapon(TSubclassOf<class AWeaponBase> Weapon, FName SocketName);
 	void SetWeaponUi();
 	void SetRespawnUi();
 	void SetbInRespon(bool _bInRespon) { bInRespon = _bInRespon; }
@@ -116,7 +118,6 @@ public:
 	void SetOverlappingEscapeTool(class AEscapeTool* _OverlappingEscapeTool) { OverlappingEscapeTool = _OverlappingEscapeTool; }
 	void SetbAlive(bool _bAlive) {bAlive = _bAlive;}
 
-	class AWeaponBase* GetCurWeapon() const { return CurWeapon; }
 	ETurningInPlace GetTurningType() { return TurningType; }
 	float GetAO_Yaw() const { return AO_Yaw; }
 	float GetAO_Pitch() const { return AO_Pitch; }
@@ -126,7 +127,6 @@ public:
 	UAnimMontage* GetDeadMontage() { return DeadMontage; }
 	int32 GetEscapeToolNum() { return ObtainedEscapeToolNum; }
 	class UMaterialInstanceDynamic* GetDynamicMaterial() { return MDynamicDissolveInst; }
-	class AWeaponBase* GetWeapon() { return CurWeapon; }
 	class ACharacterController* GetMainController() { return MainController; }
 	class ULevelSequence* GetEndGameCine() { return EndGameCine; }
 	float GetHealth() const { return Health; }
@@ -157,18 +157,12 @@ public:
 
 	void Dead();
 	FTimerHandle DeadTimer;
-	TObjectPtr<class AWeaponBase> CurWeapon;
 
 protected:
-
-	UPROPERTY(EditAnywhere, Category = Animation)
-	TObjectPtr<class UAnimMontage> FireActionMontage;
 	UPROPERTY(EditAnywhere, Category = Animation)
 	TObjectPtr<class UAnimMontage> GrenadeMontage;
 	UPROPERTY(EditAnywhere, Category = Animation)
 	TObjectPtr<class UAnimMontage> DeadMontage;
-	UPROPERTY(EditAnywhere, Category = Animation)
-	TObjectPtr<class UAnimMontage> ReloadMontage;
 	UPROPERTY(EditAnywhere, Category = Animation)
 	TObjectPtr<class UAnimMontage> InterMontage;
 	UPROPERTY(EditAnywhere, Category = Animation)
@@ -200,15 +194,8 @@ protected:
 	FName RightHandSocketName;
 
 	//fire
-	bool bCanFire;
 	bool bFirePressed;
-	FTimerHandle FireTimer;
-	void StartFireTimer();
-	void FireTimerFinished();
-	void Fire();
-	void FirePressd(bool _Pressd);
 	void TraceUnderCrossHiar(FHitResult& TraceHitResult);
-	void PlayFireActionMontage();
 
 	bool bCanJump = true;
 	bool bInRespon;
@@ -304,8 +291,6 @@ public:
 	//서버랑 연동하는 함수들
 	UFUNCTION()
 	void SendEnd();
-	void SpawnBeam(FVector StartBeam, FVector EndBeam);
-	//void SpawnHitImpact(FVector HitLoc, FRotator HitRot);
 	bool bStarted;
 	FTimerHandle StartHandle;
 	UFUNCTION()
@@ -342,12 +327,3 @@ enum class EBojoMugiType : uint8
 	ECS_DEFAULT UMETA(DisplayName = "Default")
 };
 
-UENUM(BlueprintType)
-enum class EWeaponType : uint8
-{
-	E_Rifle UMETA(DisplayName = "Rifle"),
-	E_Shotgun UMETA(DisplayName = "Shotgun"),
-	E_Launcher UMETA(DisplayName = "Launcher"),
-
-	ECS_DEFAULT UMETA(DisplayName = "Default")
-};
